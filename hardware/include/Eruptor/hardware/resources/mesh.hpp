@@ -11,7 +11,6 @@ struct Mesh
     uint32_t vertex_offset{};
     uint32_t indices_offset{};
 
-    uint32_t vertex_amount{};
     uint32_t indices_amount{};
 
     uint32_t material_id{};

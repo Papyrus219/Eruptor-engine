@@ -48,4 +48,4 @@ add_dependencies(eruptor_hardware main_shader)
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR})
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR}/include)
 
-add_slang_shader_target(main_shader SOURCES ${CMAKE_SOURCE_DIR}/shaders_src/shader.slang)
+add_slang_shader_target(main_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/shader.slang)

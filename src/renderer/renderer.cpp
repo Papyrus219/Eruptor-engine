@@ -179,17 +179,17 @@ void eruptor::renderer::Renderer::Render_scene(scene::Scene & scene)
 
         for(int64_t i = parents.size() - 1; i >= 0; i--)
         {
-            model *= scene.render_objects[parents[i]].transformation.Get_model_matrix();
+            model *= scene.render_objects[parents[i]].Get_model_matrix();
         }
         parents.clear();
 
-        model *= scene.render_objects[i].transformation.Get_model_matrix();
+        model *= scene.render_objects[i].Get_model_matrix();
 
         auto & command_buffor = hardware->Get_command_manager().Get_graphic_command_buffor( current_frame );
         auto pc = hardware::Push_constant{model, scene.render_objects[i].color};
         command_buffor.pushConstants<hardware::Push_constant>(hardware->Get_pipeline().Get_pipeline_layout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, pc );
 
-        Render_model( scene.render_objects[i].model_handle );
+        Render_model( scene.render_objects[i].Get_model_handle() );
     }
 }
 

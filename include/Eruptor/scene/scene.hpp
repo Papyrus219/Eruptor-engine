@@ -9,7 +9,7 @@ namespace eruptor::scene
 
 struct Scene
 {
-    std::vector<Render_object> render_objects{{}};
+    std::vector<Render_object> render_objects{};
 };
 
 }

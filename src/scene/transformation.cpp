@@ -10,7 +10,6 @@ const glm::mat4x4 & eruptor::scene::Transformation::Get_model_matrix()
 
     glm::mat4x4 model{1.0f};
     model = glm::translate(model, position);
-    model = glm::rotate(model, rotation.x, {1.0f, 0.0f, 0.0f});
     model *= glm::mat4_cast(rotation);
     model = glm::scale(model, scale);
 

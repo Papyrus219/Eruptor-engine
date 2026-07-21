@@ -9,28 +9,33 @@ find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
 
 add_subdirectory(hardware/)
+add_subdirectory(physic/)
 
 set(RESOURCE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_manager.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_handle.cpp
-                 ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource.cpp)
+)
 
 set(RENDERER_SRC ${CMAKE_CURRENT_LIST_DIR}/src/renderer/renderer.cpp
-                 ${CMAKE_CURRENT_LIST_DIR}/src/renderer/cameras.cpp)
+                 ${CMAKE_CURRENT_LIST_DIR}/src/renderer/cameras.cpp
+)
 
 set(SCENE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/render_object.cpp
-              ${CMAKE_CURRENT_LIST_DIR}/src/scene/transformation.cpp)
+              ${CMAKE_CURRENT_LIST_DIR}/src/scene/transformation.cpp
+)
 
-set(ENGINE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/eruptor.cpp)
+set(ENGINE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/eruptor.cpp
+)
 
 Make_library(TARGET eruptor_resource
 SOURCES RESOURCE_SRC
+LIBRARIES_TO_LINK_PUB eruptor_physic
 LIBRARIES_TO_LINK_PRIV eruptor_hardware assimp::assimp eruptor_event
 COMPILATION_FEATURES cxx_std_23)
 
 Make_library(TARGET eruptor_scene
 SOURCES SCENE_SRC
-LIBRARIES_TO_LINK_PRIV eruptor_resource glm::glm
+LIBRARIES_TO_LINK_PRIV eruptor_resource glm::glm eruptor_event
 COMPILATION_FEATURES cxx_std_23)
 
 Make_library(TARGET eruptor_renderer

@@ -18,7 +18,10 @@ public:
 
     void Set_position(glm::vec3 position) {this->position = position; has_changed = true;}
     void Set_rotation_euler(glm::vec3 rotation) {this->rotation = glm::quat(rotation); has_changed = true;}
+    void Set_rotation_quad(glm::quat rotation) {this->rotation = rotation;}
     void Set_scale(glm::vec3 scale) {this->scale = scale; has_changed = true;}
+
+    bool Get_is_has_changed() {return has_changed;}
 
 private:
     bool has_changed{true};

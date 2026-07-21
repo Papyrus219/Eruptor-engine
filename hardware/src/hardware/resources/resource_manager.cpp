@@ -135,7 +135,6 @@ uint32_t eruptor::hardware::Resource_manager::Stage_mesh_data(Mesh_data & mesh_d
     tmp_mesh.vertex_offset = curr_vertex_offset / sizeof(Vertex);
     tmp_mesh.indices_offset = curr_index_offset / sizeof(uint32_t);
     tmp_mesh.indices_amount = mesh_data.indices.size();
-    tmp_mesh.vertex_amount = mesh_data.vertecies.size();
     tmp_mesh.material_id = mesh_data.material_id;
 
     meshes.push_back( std::move(tmp_mesh) );
