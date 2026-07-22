@@ -1,6 +1,6 @@
 #include <Eruptor/hardware/uniform_buffers.hpp>
 #include <Eruptor/hardware/device.hpp>
-#include <Eruptor/hardware/pipeline.hpp>
+#include <Eruptor/hardware/pipelines.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -90,7 +90,7 @@ void eruptor::hardware::Uniform_buffers::Create_descriptors_sets(const vk::raii:
     }
 }
 
-void eruptor::hardware::Uniform_buffers::Bind_vp_buffer(vk::raii::CommandBuffer& command_buffer, uint32_t frame_index, Pipeline & pipeline, const glm::mat4 & view)
+void eruptor::hardware::Uniform_buffers::Bind_vp_buffer(vk::raii::CommandBuffer& command_buffer, uint32_t frame_index, Pipelines & pipeline, Pipeline_id pipeline_id, const glm::mat4 & view)
 {
     hardware::Uniform_buffer_vp ubo{};
     ubo.view = view;
@@ -99,7 +99,7 @@ void eruptor::hardware::Uniform_buffers::Bind_vp_buffer(vk::raii::CommandBuffer&
 
     memcpy( uniform_vp_buffers_mapped[frame_index], &ubo, sizeof(ubo));
 
-    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.Get_pipeline_layout(), 0, *descriptor_sets[frame_index], nullptr);
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline.Get_pipeline_layout(pipeline_id), 0, *descriptor_sets[frame_index], nullptr);
 }
 
 

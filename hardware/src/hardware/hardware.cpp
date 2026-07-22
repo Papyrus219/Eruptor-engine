@@ -16,5 +16,5 @@ void eruptor::hardware::Hardware::Init()
     resource_manager.Assign_command_manager( command_manager );
     resource_manager.Init(device.Get_alocator_handle(), 256_MiB, 256_MiB, 2_GiB );
 
-    pipeline.Init(device, swapchain, uniform_buffers, resource_manager);
+    pipelines.Init(device, swapchain, uniform_buffers, resource_manager);
 }

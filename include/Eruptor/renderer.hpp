@@ -5,7 +5,10 @@
 #include <Eruptor/resource/resource_handle.hpp>
 #include <Eruptor/event/event_listener.hpp>
 #include <Eruptor/renderer/cameras.hpp>
+#include <Eruptor/renderer/render_queue.hpp>
 #include <vector>
+#include <array>
+#include <utility>
 
 namespace eruptor
 {
@@ -18,6 +21,7 @@ class Window;
 namespace scene
 {
     struct Scene;
+    struct Render_object;
 }
 
 namespace event
@@ -38,10 +42,10 @@ public:
 
     void Init(hardware::Hardware & hardware, resource::Resource_manager & resource_manager);
 
-    void Begin_frame();
-    void End_frame();
+    void Stage_scene_render_data(scene::Scene & scene);
+    void Stage_object_render_data(scene::Render_object & object);
 
-    void Render_scene(scene::Scene & scene);
+    void Flush_render_buffor();
 
     void On_event(const event::Event & event) override;
 
@@ -49,18 +53,19 @@ public:
     Fly_camera & Get_camera() {return fly_camera;}
 
 private:
-    void Render_model(resource::Model_handle model_handle);
-
     std::vector<Frame_sync> frame_syncs;
+
+    Render_queue render_queue{};
 
     hardware::Hardware * hardware{};
     resource::Resource_manager * rs_resource_manager{};
+    hardware::Resource_manager * hw_resource_manager{};
 
     event::Event_manager & event_manager;
 
     Fly_camera fly_camera{{0.0f, 1.0f, 0.0f}};
 
-    uint32_t current_image_index{};
+    //uint32_t current_image_index{};
     uint32_t current_frame{};
 };
 

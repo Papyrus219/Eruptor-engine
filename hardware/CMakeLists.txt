@@ -20,7 +20,7 @@ set(HARDWARE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/hardware/hardware.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/window.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/swapchain.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/uniform_buffers.cpp
-                 ${CMAKE_CURRENT_LIST_DIR}/src/hardware/pipeline.cpp
+                 ${CMAKE_CURRENT_LIST_DIR}/src/hardware/pipelines.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/command_manager.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/vma.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/utilities.cpp
@@ -44,8 +44,9 @@ LIBRARIES_TO_LINK_PUB Vulkan::Vulkan glm::glm glfw VulkanMemoryAllocator-Hpp::Vu
 LIBRARIES_TO_LINK_PRIV eruptor_event
 COMPILATION_FEATURES cxx_std_23)
 
-add_dependencies(eruptor_hardware main_shader)
+add_dependencies(eruptor_hardware opaque_shader debug_shader)
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR})
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR}/include)
 
-add_slang_shader_target(main_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/shader.slang)
+add_slang_shader_target(opaque_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/opaque.slang)
+add_slang_shader_target(debug_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/debug.slang)

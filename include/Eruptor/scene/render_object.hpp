@@ -39,6 +39,7 @@ struct Render_object
 
     glm::vec4 color{1.0f};
     uint32_t parent_object_index{}; ///NOTE Curently not in use
+    bool is_coliding{};
 
 private:
     void Snap_to_y(float target_y);

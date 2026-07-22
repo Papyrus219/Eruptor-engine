@@ -6,10 +6,10 @@
 #include <Eruptor/hardware/window.hpp>
 #include <Eruptor/hardware/swapchain.hpp>
 #include <Eruptor/hardware/uniform_buffers.hpp>
-#include <Eruptor/hardware/pipeline.hpp>
+#include <Eruptor/hardware/pipelines.hpp>
 #include <Eruptor/hardware/command_manager.hpp>
 #include <Eruptor/hardware/resources/resource_manager.hpp>
-#include <Eruptor/hardware/resources/push_constant.hpp>
+#include <Eruptor/hardware/resources/push_constants.hpp>
 
 namespace eruptor::hardware
 {
@@ -26,7 +26,7 @@ public:
     Device & Get_device() {return device;}
     Uniform_buffers & Get_uniform_buffers() {return uniform_buffers;}
     Swapchain & Get_swapchain() {return swapchain;}
-    Pipeline & Get_pipeline() {return pipeline;}
+    Pipelines & Get_pipelines() {return pipelines;}
     Command_manager & Get_command_manager() {return command_manager;}
     Resource_manager & Get_resource_manager() {return resource_manager;}
 
@@ -37,7 +37,7 @@ private:
     Window window{};
     Uniform_buffers uniform_buffers{};
     Swapchain swapchain{};
-    Pipeline pipeline{};
+    Pipelines pipelines{};
     Command_manager command_manager{};
     Resource_manager resource_manager{};
 };
