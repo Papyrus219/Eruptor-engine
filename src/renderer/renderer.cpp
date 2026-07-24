@@ -11,6 +11,7 @@
 
 #ifndef NDEBUG
 constexpr bool DEBUG_RENDER = true;
+bool render_debug_enabled = true;
 #else
 constexpr bool DEBUG_RENDER = false;
 #endif
@@ -86,19 +87,22 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
 
     if constexpr(DEBUG_RENDER)
     {
-        Render_request<hardware::Push_constant_debug> debug_request{};
-        hardware::Push_constant_debug push_constant_debug{};
+        if(render_debug_enabled)
+        {
+            Render_request<hardware::Push_constant_debug> debug_request{};
+            hardware::Push_constant_debug push_constant_debug{};
 
-        auto aabb = object.Get_aabb();
+            auto aabb = object.Get_aabb();
 
-        push_constant_debug.color = object.is_coliding ?  glm::vec3{1.0f, 0.0f, 0.0f} : glm::vec3{0.0f, 0.0f, 1.0f};
-        push_constant_debug.min = aabb.min;
-        push_constant_debug.max = aabb.max;
+            push_constant_debug.color = object.is_coliding ?  glm::vec3{1.0f, 0.0f, 0.0f} : glm::vec3{0.0f, 0.0f, 1.0f};
+            push_constant_debug.min = aabb.min;
+            push_constant_debug.max = aabb.max;
 
-        debug_request.indices_amount = 24;
-        debug_request.push_constant = push_constant_debug;
+            debug_request.indices_amount = 24;
+            debug_request.push_constant = push_constant_debug;
 
-        render_queue.debug_queue.push_back( debug_request );
+            render_queue.debug_queue.push_back( debug_request );
+        }
     }
 }
 
@@ -108,7 +112,6 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     auto & swap_chain = hardware->Get_swapchain();
     auto & command_manager = hardware->Get_command_manager();
     auto & pipelines = hardware->Get_pipelines();
-    auto & command_buffor = command_manager.Begin_graphic_command_record(current_frame);
 
     auto fence_result = device.Get_device_handle().waitForFences(*frame_syncs[current_frame].in_flight_fences, vk::True, UINT64_MAX);
     if (fence_result != vk::Result::eSuccess)
@@ -117,6 +120,7 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     }
     device.Get_device_handle().resetFences(*frame_syncs[current_frame].in_flight_fences);
 
+    auto & command_buffor = command_manager.Begin_graphic_command_record(current_frame);
     auto [result, image_index] = swap_chain.Get_swapchain_handle().acquireNextImage(UINT64_MAX, *frame_syncs[current_frame].present_complete, nullptr);
 
 
@@ -188,14 +192,17 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
 
     if constexpr(DEBUG_RENDER)
     {
-        command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::DEBUG));
-
-        hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::DEBUG, fly_camera.Get_view_matrix());
-        for(auto & render_request : render_queue.debug_queue)
+        if(!render_queue.debug_queue.empty())
         {
-            command_buffor.pushConstants<hardware::Push_constant_debug>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::DEBUG), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
+            command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::DEBUG));
 
-            command_buffor.draw(24, 1, 0, 0);
+            hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::DEBUG, fly_camera.Get_view_matrix());
+            for(auto & render_request : render_queue.debug_queue)
+            {
+                command_buffor.pushConstants<hardware::Push_constant_debug>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::DEBUG), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
+
+                command_buffor.draw(24, 1, 0, 0);
+            }
         }
     }
 
@@ -212,10 +219,10 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     );
 
     command_buffor.end();
-    command_manager.Submit_graphic_commands(command_buffor, std::vector<vk::PipelineStageFlags>{vk::PipelineStageFlagBits::eColorAttachmentOutput}, std::vector{*frame_syncs[current_frame].present_complete}, std::vector{*frame_syncs[current_frame].render_finished}, *frame_syncs[current_frame].in_flight_fences);
+    command_manager.Submit_graphic_commands(command_buffor, std::vector<vk::PipelineStageFlags>{vk::PipelineStageFlagBits::eColorAttachmentOutput}, std::vector{*frame_syncs[current_frame].present_complete}, std::vector{*frame_syncs[image_index].render_finished}, *frame_syncs[current_frame].in_flight_fences);
 
     vk::PresentInfoKHR presentInfoKHR{};
-    presentInfoKHR.setWaitSemaphores( *frame_syncs[current_frame].render_finished );
+    presentInfoKHR.setWaitSemaphores( *frame_syncs[image_index].render_finished );
     presentInfoKHR.setSwapchains( *swap_chain.Get_swapchain_handle() );
     presentInfoKHR.setImageIndices( image_index );
 
@@ -238,7 +245,16 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
 
 void eruptor::renderer::Renderer::On_event(const event::Event & event)
 {
-
+    if constexpr (DEBUG_RENDER)
+    {
+        if(auto key_press = event.Get_if<event::Event::Key_pressed>())
+        {
+            if(key_press->key_type == event::Key::F1)
+            {
+                render_debug_enabled = !render_debug_enabled;
+            }
+        }
+    }
 }
 
 eruptor::hardware::Window & eruptor::renderer::Renderer::Get_window()

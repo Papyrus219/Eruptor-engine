@@ -46,5 +46,5 @@ COMPILATION_FEATURES cxx_std_23)
 Make_library(TARGET eruptor_engine
 SOURCES ENGINE_SRC
 LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_event
-LIBRARIES_TO_LINK_PUB eruptor_resource eruptor_renderer
+LIBRARIES_TO_LINK_PUB eruptor_resource eruptor_renderer eruptor_physic
 COMPILATION_FEATURES cxx_std_23)

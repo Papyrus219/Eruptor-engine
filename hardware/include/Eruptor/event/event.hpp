@@ -4,6 +4,7 @@
 #include <Eruptor/event/keys.hpp>
 #include <variant>
 #include <concepts>
+#include <cstdint>
 
 namespace eruptor::event
 {
@@ -71,6 +72,14 @@ public:
         using I_am_in = Event;
     };
 
+    struct Collision_occurred
+    {
+        uint32_t object_a_id;
+        uint32_t object_b_id;
+
+        using I_am_in = Event;
+    };
+
     template<typename T>
     requires Is_inner_of<T, Event>
     [[nodiscard]] const bool Is() const;
@@ -85,7 +94,8 @@ private:
                  Key_pressed,
                  Key_release,
                  Mouse_moved,
-                 Mouse_scroll> data{};
+                 Mouse_scroll,
+                 Collision_occurred> data{};
 };
 
 template<typename T>
