@@ -102,7 +102,7 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
             debug_request.push_constant = push_constant_debug;
 
             render_queue.debug_queue.push_back( debug_request );
-        }
+       }
     }
 }
 

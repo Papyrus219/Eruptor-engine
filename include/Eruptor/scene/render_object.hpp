@@ -14,13 +14,14 @@ namespace eruptor::resource
 namespace eruptor::scene
 {
 
+class Scene_parser;
+
 struct Render_object
 {
-    Render_object(resource::Resource_manager & resource_manager, resource::Model_handle model_handle_);
-
     void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
 
     physic::AABB Get_aabb();
+    physic::OOB Get_oob();
     resource::Model_handle Get_model_handle() {return model_handle;}
 
     //Transformation interface
@@ -48,7 +49,14 @@ private:
     resource::Model_handle model_handle{};
     physic::AABB model_aabb{};
     physic::AABB transformed_aabb{};
+
+    physic::OOB model_oob{};
+    physic::OOB transformed_oob{};
+
     bool aabb_has_changed{};
+    bool oob_has_changed{};
+
+    friend class Scene_parser;
 };
 
 }

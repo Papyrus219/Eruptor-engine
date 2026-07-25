@@ -12,6 +12,13 @@ struct AABB
     glm::vec3 max{};
 };
 
+struct OOB
+{
+    glm::vec3 center{};
+    glm::vec3 half_size{};
+    glm::mat3 rotation{1.0f};
+};
+
 struct Colision_box
 {
 
