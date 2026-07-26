@@ -2,7 +2,7 @@
 #define ERUPTOR_RESOURCE_MODEL_HPP
 
 #include <Eruptor/resource/resource_handle.hpp>
-
+#include <Eruptor/resource/hitbox.hpp>
 #include <filesystem>
 #include <vector>
 
@@ -17,14 +17,24 @@ enum class Status
     ERROR
 };
 
+enum class Hitbox_type
+{
+    OBB,
+    SPHERE
+};
+
 struct Model
 {
+    Model(Status status_, const std::filesystem::path & path_): status{status_}, path{path_} {}
     Status status{};
+    Hitbox_type hitbox_type{};
 
     std::filesystem::path path{};
 
     std::vector<Mesh_handle> Meshes_handles{};
     std::vector<Material_handle> materials_handles{};
+
+    Hitbox hitbox{};
 };
 
 }

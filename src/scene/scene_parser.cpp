@@ -1,7 +1,6 @@
 #include <Eruptor/scene/scene_parser.hpp>
 #include <fstream>
 #include <iostream>
-#include <stdexcept>
 #include <print>
 
 #ifndef NDEBUG
@@ -10,14 +9,19 @@ constexpr bool Debug_mode = true;
 constexpr bool Debug_mode = false;
 #endif
 
-eruptor::scene::Scene eruptor::scene::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
+std::string eruptor::scene::Scene_parser::error_file_load{"Failed to load file!"};
+std::string eruptor::scene::Scene_parser::error_parsing{"Failed to parse file correctly!"};
+
+std::expected<eruptor::scene::Scene, std::string_view> eruptor::scene::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
 {
     Load_file_to_buffor(scene_path);
+    if(error_happen) return std::unexpected{error_message};
+
     Scene scene{};
 
     std::string_view buffer_view = buffor;
     size_t pos{};
-    while(pos < buffer_view.size() && is_parsing)
+    while(pos < buffer_view.size())
     {
         size_t end = buffer_view.find('\n', pos);
         if(end == std::string_view::npos) end = buffer_view.size();
@@ -38,7 +42,7 @@ eruptor::scene::Scene eruptor::scene::Scene_parser::Load_scene(const std::filesy
                     pos = end + 1;
                     continue;
                 case '[':
-                    line_mode = Line_mode::MODEL;                  //Model path declaration
+                    line_mode = Line_mode::MODEL_NAME;                  //Model path declaration
                     break;
                 case '<':
                     line_mode = Line_mode::OBJECT_DECLARATION;     //Object declaration
@@ -53,6 +57,13 @@ eruptor::scene::Scene eruptor::scene::Scene_parser::Load_scene(const std::filesy
         }
 
         Parse_line(line, scene);
+        if(!is_parsing)
+        {
+            error_happen = true;
+            error_message = error_parsing;
+            return  std::unexpected{error_message};
+        }
+
         pos = end + 1;
     }
 
@@ -64,7 +75,9 @@ void eruptor::scene::Scene_parser::Load_file_to_buffor(const std::filesystem::pa
     std::ifstream file{scene_path};
     if(!file)
     {
-        throw std::runtime_error{"Failed to open scene config file: " + scene_path.string()};
+        error_happen = true;
+        error_message = error_file_load;
+        return;
     }
 
     std::ostringstream ss{};
@@ -75,6 +88,9 @@ void eruptor::scene::Scene_parser::Load_file_to_buffor(const std::filesystem::pa
     model_variables.clear();
     is_parsing = true;
     is_in_model_loading_stage = true;
+    error_happen = false;
+    error_message = "";
+    line_mode = Line_mode::VERSION_CHECK;
     line_count = 0;
 }
 
@@ -87,7 +103,45 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
     switch(line_mode)
     {
-        case Line_mode::MODEL:
+        case Line_mode::VERSION_CHECK:
+        {
+            size_t colon_pos = line.find_first_of(":");
+
+            if(colon_pos == std::string_view::npos || line.substr(0, colon_pos) != "Version")
+            {
+                std::print(std::cerr, "Missing version declaration in top of the file: {}\n", line);
+                is_parsing = false;
+                return;
+            }
+
+            size_t version_start = line.find_first_not_of(" ", colon_pos + 1);
+            if(version_start == std::string_view::npos)
+            {
+                std::print(std::cerr, "Missing version in version declaration: {}\n", line);
+                is_parsing = false;
+                return;
+            }
+
+            auto version = line.substr(version_start);
+            if(version == "1_0")
+            {
+                file_version = Version::V1_0;
+            }
+            else if(version == "1_1")
+            {
+                file_version = Version::V1_1;
+            }
+            else
+            {
+                std::print(std::cerr, "Unknown version in version declaration: {}\n", line);
+                is_parsing = false;
+                return;
+            }
+
+            line_mode = Line_mode::NONE;
+            break;
+        }
+        case Line_mode::MODEL_NAME:
         {
             if(line.back() != ']')
             {
@@ -96,7 +150,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
                 return;
             }
 
-            if(line.find('=') == line.npos)
+            if(line.find('=') == std::string_view::npos)
             {
                 std::print(std::cerr, "Missing assigment sign in model declaration in line {}: {}\n", line_count, line);
                 is_parsing = false;
@@ -118,10 +172,56 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             }
 
             model_variables[model_name] = {model_path, resource_manager->Add_model(model_path)};
+            current_parsed_model = &resource_manager->Get_model( model_variables[model_name].second );
 
             if constexpr(Debug_mode)
             {
                 std::print(std::clog, "[{}] = [{}]\n", model_name, model_path);
+            }
+
+            if(file_version >= Version::V1_1)
+            {
+                line_mode = Line_mode::MODEL_HITBOX;
+            }
+            else
+            {
+                line_mode = Line_mode::NONE;
+            }
+            break;
+        }
+        case Line_mode::MODEL_HITBOX:
+        {
+            size_t colon_pos = line.find_first_of(":");
+
+            if(line.substr(0, colon_pos) != "Hitbox" || colon_pos == std::string_view::npos)
+            {
+                std::print(std::cerr, "Missing hitbox declaration in model declaration in line {}: {}\n", line_count, line);
+                is_parsing = false;
+                return;
+            }
+
+            size_t type_start = line.find_first_not_of(" ", colon_pos + 1);
+            if(type_start == std::string_view::npos)
+            {
+                std::print(std::cerr, "Missing hitbox type in model hitbox declaration in line {}: {}\n", line_count, line);
+                is_parsing = false;
+                return;
+            }
+
+            auto hitbox_type = line.substr(type_start);
+            if(hitbox_type == "OBB")
+            {
+                current_parsed_model->hitbox_type = resource::Hitbox_type::OBB;
+            }
+            else if(hitbox_type == "SPHERE")
+            {
+                current_parsed_model->hitbox_type = resource::Hitbox_type::SPHERE;
+            }
+            else
+            {
+                std::print(std::cerr, "Unknown hitbox type in model hitbox declaration in line {}: {}\n", line_count, line);
+                is_parsing = false;
+                return;
             }
 
             line_mode = Line_mode::NONE;

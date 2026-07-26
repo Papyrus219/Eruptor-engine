@@ -78,12 +78,19 @@ eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(c
 
 void eruptor::resource::Resource_manager::Load_models()
 {
+    size_t models_to_load_count{};
     for(auto & model : models)
     {
+        if(model.status != Status::PENDING) continue;
+
         Load_model(model);
+        models_to_load_count++;
     }
 
-    hw_resource_manager->Upload_data_to_GPU();
+    if(models_to_load_count)
+    {
+        hw_resource_manager->Upload_data_to_GPU();
+    }
 }
 
 void eruptor::resource::Resource_manager::Load_model(Model & model)
