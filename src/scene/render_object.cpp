@@ -8,7 +8,7 @@ void eruptor::scene::Render_object::Set_model(resource::Resource_manager& resour
     this->model_aabb = resource_manager.Get_model_aabb( model_handle );
 
     this->aabb_has_changed = true;
-    this->oob_has_changed = true;
+    this->hitbox_has_changed = true;
 }
 
 eruptor::physic::AABB eruptor::scene::Render_object::Get_aabb()
@@ -50,7 +50,7 @@ void eruptor::scene::Render_object::Set_position(glm::vec3 new_position)
     transformation.Set_position( new_position );
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale, std::optional<float> snap_y)
@@ -63,7 +63,7 @@ void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale, std::optional
     }
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Set_rotation_euler(glm::vec3 new_rotation)
@@ -71,7 +71,7 @@ void eruptor::scene::Render_object::Set_rotation_euler(glm::vec3 new_rotation)
     transformation.Set_rotation_euler( new_rotation );
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
@@ -79,7 +79,7 @@ void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
     transformation.Set_position( transformation.Get_position() + move_offset );
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset, std::optional<float> snap_y)
@@ -92,7 +92,7 @@ void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset, std::op
     }
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
@@ -101,7 +101,7 @@ void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
     transformation.Set_rotation_quad( transformation.Get_rotation() * quat_offset );
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 
 void eruptor::scene::Render_object::Snap_to_y(float target_y)
@@ -112,6 +112,6 @@ void eruptor::scene::Render_object::Snap_to_y(float target_y)
     transformation.Set_position( pos );
 
     aabb_has_changed = true;
-    oob_has_changed = true;
+    hitbox_has_changed = true;
 }
 

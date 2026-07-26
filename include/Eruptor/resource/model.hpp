@@ -2,7 +2,6 @@
 #define ERUPTOR_RESOURCE_MODEL_HPP
 
 #include <Eruptor/resource/resource_handle.hpp>
-#include <Eruptor/resource/hitbox.hpp>
 #include <filesystem>
 #include <vector>
 
@@ -33,8 +32,6 @@ struct Model
 
     std::vector<Mesh_handle> Meshes_handles{};
     std::vector<Material_handle> materials_handles{};
-
-    Hitbox hitbox{};
 };
 
 }

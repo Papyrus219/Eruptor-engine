@@ -1,11 +1,18 @@
-#ifndef ERUPTOR_RESOURCE_HITBOX_HPP
-#define ERUPTOR_RESOURCE_HITBOX_HPP
+#ifndef ERUPTOR_PHYSIC_HITBOX_HPP
+#define ERUPTOR_PHYSIC_HITBOX_HPP
 
 #include <glm/glm.hpp>
 #include <variant>
 
-namespace eruptor::resource
+namespace eruptor::physic
 {
+
+struct AABB
+{
+    glm::vec3 min{};
+    glm::vec3 max{};
+};
+
 
 struct OBB_hitbox
 {
@@ -24,4 +31,4 @@ using Hitbox = std::variant<OBB_hitbox, Sphere_hitbox>;
 
 }
 
-#endif //ERUPTOR_RESOURCE_HITBOX_HPP
+#endif //ERUPTOR_PHYSIC_HITBOX_HPP

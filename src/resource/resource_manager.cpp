@@ -49,10 +49,16 @@ eruptor::resource::Model & eruptor::resource::Resource_manager::Get_model(Model_
     return models[ model_handle.Get_id() ];
 }
 
-eruptor::physic::AABB eruptor::resource::Resource_manager::Get_model_aabb(Model_handle& model_handle)
+eruptor::physic::AABB eruptor::resource::Resource_manager::Get_model_aabb(Model_handle & model_handle)
 {
     return models_AABB[ model_handle.Get_id() ];
 }
+
+eruptor::physic::Hitbox eruptor::resource::Resource_manager::Get_model_hitbox(Model_handle & model_handle)
+{
+    return models_hitboxes[ model_handle.Get_id() ];
+}
+
 
 eruptor::resource::Material eruptor::resource::Resource_manager::Get_material(Material_handle & material_handle)
 {
@@ -98,7 +104,7 @@ void eruptor::resource::Resource_manager::Load_model(Model & model)
     Assimp::Importer importer{};
     const aiScene * scene = importer.ReadFile(model.path, aiProcess_Triangulate | aiProcess_PreTransformVertices);
 
-    physic::AABB aabb{};
+    std::vector<glm::vec3> all_vertecies{};
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -107,30 +113,27 @@ void eruptor::resource::Resource_manager::Load_model(Model & model)
     }
     auto directory = model.path.parent_path();
 
-    Process_node(scene->mRootNode, scene, model, directory, glm::mat4(1.0f), aabb);
-    model.status = Status::LODADED;
-    models_AABB.push_back(aabb);
+    Process_node(scene->mRootNode, scene, model, directory, all_vertecies);
 
-    std::print(std::clog, "Model: {}\n AABB.min: {} {} {} AABB.max: {} {} {}\n", model.path.string(), aabb.min.x, aabb.min.y, aabb.min.z, aabb.max.x, aabb.max.y, aabb.max.z);
+    Calculate_model_hitbox(model, all_vertecies);
+    model.status = Status::LODADED;
 }
 
-void eruptor::resource::Resource_manager::Process_node(aiNode* node, const aiScene* scene, Model& model, const std::filesystem::path & directory, const glm::mat4 & parent_transform, physic::AABB & aabb)
+void eruptor::resource::Resource_manager::Process_node(aiNode* node, const aiScene* scene, Model& model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies)
 {
-    glm::mat4 global_transform = parent_transform * Convert_matrix(node->mTransformation);
-
     for(auto i{0u}; i < node->mNumMeshes; i++)
     {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-        Process_mesh(mesh, scene, model, directory, global_transform, aabb);
+        Process_mesh(mesh, scene, model, directory, all_vertecies);
     }
 
     for(auto i{0u}; i < node->mNumChildren; i++)
     {
-        Process_node(node->mChildren[i], scene, model, directory, global_transform, aabb);
+        Process_node(node->mChildren[i], scene, model, directory, all_vertecies);
     }
 }
 
-void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiScene* scene, Model& model, const std::filesystem::path & directory, const glm::mat4 & transform, physic::AABB & aabb)
+void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiScene* scene, Model& model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies)
 {
 
     hardware::Mesh_data mesh_data{};
@@ -160,11 +163,9 @@ void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiSce
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
-        //vertex.pos = glm::vec3(transform * glm::vec4(vector, 1.0f));
         vertex.pos = vector;
 
-        aabb.min = glm::min(aabb.min, vertex.pos);
-        aabb.max = glm::max(aabb.max, vertex.pos);
+        all_vertecies.push_back(vertex.pos);
 
         vector.x = mesh->mNormals[i].x;
         vector.y = mesh->mNormals[i].y;
@@ -234,6 +235,93 @@ eruptor::resource::Texture_handle eruptor::resource::Resource_manager::Load_mate
     stbi_image_free(tex_data.pixels);
 
     return tex_handle;
+}
+
+void eruptor::resource::Resource_manager::Calculate_model_hitbox(Model & model, std::vector<glm::vec3> & all_vertecies)
+{
+    physic::AABB aabb{};
+    physic::Hitbox hitbox{};
+
+    for(const auto & vert : all_vertecies)
+    {
+        aabb.min = glm::min(vert, aabb.min);
+        aabb.max = glm::max(vert, aabb.max);
+    }
+
+    if(model.hitbox_type == Hitbox_type::OBB)
+    {
+        physic::OBB_hitbox oob_hitbox{};
+
+        Calculate_obb_hitbox(oob_hitbox, all_vertecies);
+
+        hitbox = oob_hitbox;
+    }
+    else if(model.hitbox_type == Hitbox_type::SPHERE)
+    {
+        physic::Sphere_hitbox sphere_hitbox{};
+
+        Calculate_sphere_hitbox(sphere_hitbox, all_vertecies);
+
+        hitbox = sphere_hitbox;
+    }
+
+    models_AABB.push_back(aabb);
+    models_hitboxes.push_back(hitbox);
+}
+
+void eruptor::resource::Resource_manager::Calculate_sphere_hitbox(physic::Sphere_hitbox & sphere, std::vector<glm::vec3> & all_vertecies)
+{
+    int min_id{}, max_id{}, min_x_id{}, min_y_id{}, min_z_id{}, max_x_id{}, max_y_id{}, max_z_id{};
+    for(auto i{0UZ}; i < all_vertecies.size(); i++)
+    {
+        if(all_vertecies[i].x < all_vertecies[min_x_id].x) min_x_id = i;
+        if(all_vertecies[i].y < all_vertecies[min_y_id].y) min_y_id = i;
+        if(all_vertecies[i].z < all_vertecies[min_z_id].z) min_z_id = i;
+        if(all_vertecies[i].x > all_vertecies[max_x_id].x) max_x_id = i;
+        if(all_vertecies[i].y > all_vertecies[max_y_id].y) max_y_id = i;
+        if(all_vertecies[i].z > all_vertecies[max_z_id].z) max_z_id = i;
+    }
+
+    float dist_x_squared = glm::dot(all_vertecies[max_x_id] - all_vertecies[min_x_id], all_vertecies[max_x_id] - all_vertecies[min_x_id]);
+    float dist_y_squared = glm::dot(all_vertecies[max_y_id] - all_vertecies[min_y_id], all_vertecies[max_y_id] - all_vertecies[min_y_id]);
+    float dist_z_squared = glm::dot(all_vertecies[max_z_id] - all_vertecies[min_z_id], all_vertecies[max_z_id] - all_vertecies[min_z_id]);
+
+    min_id = min_x_id;
+    max_id = max_x_id;
+    if(dist_y_squared > dist_x_squared && dist_y_squared > dist_z_squared)
+    {
+        min_id = min_y_id;
+        max_id = max_y_id;
+    }
+    if(dist_z_squared > dist_x_squared && dist_z_squared > dist_y_squared)
+    {
+        min_id = min_z_id;
+        max_id = max_z_id;
+    }
+
+    sphere.center = (all_vertecies[min_id] + all_vertecies[max_id]) * 0.5f;
+    sphere.radius = std::sqrt( glm::dot(all_vertecies[max_id] - sphere.center, all_vertecies[max_id] - sphere.center) );
+
+    for(auto i{0UZ}; i < all_vertecies.size(); i++)
+    {
+        glm::vec3 dis = all_vertecies[i] - sphere.center;
+        float distance_squared = glm::dot(dis, dis);
+
+        if(distance_squared > sphere.radius * sphere.radius)
+        {
+            float distance = std::sqrt( distance_squared );
+            float new_radius = (sphere.radius + distance) * 0.5f;
+            float k = (new_radius - sphere.radius) / distance;
+
+            sphere.radius = new_radius;
+            sphere.center += dis * k;
+        }
+    }
+}
+
+void eruptor::resource::Resource_manager::Calculate_obb_hitbox(physic::OBB_hitbox& obb, std::vector<glm::vec3>& all_vertecies)
+{
+
 }
 
 void eruptor::resource::Resource_manager::On_event(const event::Event & event)

@@ -3,7 +3,7 @@
 
 #include <Eruptor/scene/transformation.hpp>
 #include <Eruptor/resource/resource_handle.hpp>
-#include <Eruptor/physic/colision_box.hpp>
+#include <Eruptor/physic/hitbox.hpp>
 #include <optional>
 
 namespace eruptor::resource
@@ -21,7 +21,7 @@ struct Render_object
     void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
 
     physic::AABB Get_aabb();
-    physic::OOB Get_oob();
+    physic::Hitbox Get_hitbox();
     resource::Model_handle Get_model_handle() {return model_handle;}
 
     //Transformation interface
@@ -50,11 +50,11 @@ private:
     physic::AABB model_aabb{};
     physic::AABB transformed_aabb{};
 
-    physic::OOB model_oob{};
-    physic::OOB transformed_oob{};
+    physic::Hitbox model_hitbox{};
+    physic::Hitbox transformed_hitbox{};
 
     bool aabb_has_changed{};
-    bool oob_has_changed{};
+    bool hitbox_has_changed{};
 
     friend class Scene_parser;
 };

@@ -2,7 +2,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/modules/libs_maker.cmake)
 
 find_package(glm REQUIRED)
 
-set(PHYSIC_SRC ${CMAKE_CURRENT_LIST_DIR}/src/colision_box.cpp
+set(PHYSIC_SRC ${CMAKE_CURRENT_LIST_DIR}/src/hitbox.cpp
                ${CMAKE_CURRENT_LIST_DIR}/src/physic_manager.cpp)
 
 Make_library(TARGET eruptor_physic
