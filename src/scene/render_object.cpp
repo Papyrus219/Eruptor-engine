@@ -7,6 +7,9 @@ void eruptor::scene::Render_object::Set_model(resource::Resource_manager& resour
     this->model_handle = model_handle;
     this->model_aabb = resource_manager.Get_model_aabb( model_handle );
 
+    this->hitbox_type = resource_manager.Get_model( model_handle ).hitbox_type;
+    this->model_hitbox = resource_manager.Get_model_hitbox( model_handle );
+
     this->aabb_has_changed = true;
     this->hitbox_has_changed = true;
 }
@@ -38,9 +41,30 @@ eruptor::physic::AABB eruptor::scene::Render_object::Get_aabb()
             transformed_aabb.min = glm::min(transformed_aabb.min, transformed);
             transformed_aabb.max = glm::max(transformed_aabb.max, transformed);
         }
+
+        aabb_has_changed = false;
     }
 
     return transformed_aabb;
+}
+
+eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
+{
+    if(hitbox_has_changed)
+    {
+        if(hitbox_type == resource::Hitbox_type::SPHERE)
+        {
+            transformed_hitbox = std::get<physic::Sphere_hitbox>(model_hitbox) * Get_model_matrix();
+        }
+        else if(hitbox_type == resource::Hitbox_type::OBB)
+        {
+            transformed_hitbox = std::get<physic::OBB_hitbox>(model_hitbox) * Get_model_matrix();
+        }
+
+        hitbox_has_changed = false;
+    }
+
+    return transformed_hitbox;
 }
 
 //Transform interface

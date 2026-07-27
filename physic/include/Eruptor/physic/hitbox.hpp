@@ -19,6 +19,7 @@ struct OBB_hitbox
     glm::vec3 center{};
     glm::vec3 axies[3]{};
     glm::vec3 half_width{};
+
 };
 
 struct Sphere_hitbox
@@ -28,6 +29,9 @@ struct Sphere_hitbox
 };
 
 using Hitbox = std::variant<OBB_hitbox, Sphere_hitbox>;
+
+Sphere_hitbox operator*(const Sphere_hitbox & sphere, const glm::mat4 & mat);
+OBB_hitbox operator*(const OBB_hitbox & obb, const glm::mat4 & mat);
 
 }
 

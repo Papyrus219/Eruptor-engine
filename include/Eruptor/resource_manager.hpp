@@ -63,6 +63,9 @@ private:
     void Calculate_sphere_hitbox(physic::Sphere_hitbox & sphere, std::vector<glm::vec3> & all_vertecies);
     void Calculate_obb_hitbox(physic::OBB_hitbox & obb, std::vector<glm::vec3> & all_vertecies);
 
+    glm::mat3 Compute_covariance(const std::vector<glm::vec3> & all_vertecies, glm::vec3 & centroid);
+    glm::mat3 Jacobi_eigenvectors(glm::mat3 & cov, size_t iterations = 20);
+
     std::vector<Model> models{};
     std::vector<physic::AABB> models_AABB{};
     std::vector<physic::Hitbox> models_hitboxes{};

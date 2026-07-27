@@ -4,6 +4,7 @@
 #include <Eruptor/scene/transformation.hpp>
 #include <Eruptor/resource/resource_handle.hpp>
 #include <Eruptor/physic/hitbox.hpp>
+#include <Eruptor/resource/model.hpp>
 #include <optional>
 
 namespace eruptor::resource
@@ -50,6 +51,7 @@ private:
     physic::AABB model_aabb{};
     physic::AABB transformed_aabb{};
 
+    resource::Hitbox_type hitbox_type{};
     physic::Hitbox model_hitbox{};
     physic::Hitbox transformed_hitbox{};
 

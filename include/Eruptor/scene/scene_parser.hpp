@@ -22,7 +22,7 @@ public:
 private:
     void Load_file_to_buffor(const std::filesystem::path & scene_path);
     void Parse_line(std::string_view line, Scene & scene);
-    glm::vec3 Parse_3_numbers(std::string_view numbers);
+    std::expected<glm::vec3, std::string_view>  Parse_3_numbers(std::string_view numbers);
 
     resource::Resource_manager * resource_manager{};
     resource::Model * current_parsed_model{};
@@ -30,7 +30,6 @@ private:
     std::unordered_map<std::string_view, std::pair<std::string_view, resource::Model_handle>> model_variables{};
     std::string buffor{};
     uint32_t line_count{};
-    bool is_parsing{};
     bool is_in_model_loading_stage{};
 
     enum class Line_mode
@@ -57,7 +56,8 @@ private:
     std::string_view error_message{};
 
     static std::string error_file_load;
-    static std::string error_parsing;
+    static std::string error_text_parsing;
+    static std::string error_numbers_parsing;
 };
 
 }
