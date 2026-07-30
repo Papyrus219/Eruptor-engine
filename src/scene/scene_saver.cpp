@@ -2,12 +2,13 @@
 #include <fstream>
 #include <set>
 
-std::string const eruptor::scene::Scene_saver::error_file{"Scene saver: Failed to open file to save to!"};
+std::string_view const eruptor::scene::Scene_saver::error_file{"Scene saver: Failed to open file to save to!"};
 
 std::expected<void, std::string_view> eruptor::scene::Scene_saver::Save_scene_data(const Scene & scene, const std::filesystem::path & path, File_version file_version)
 {
+    std::filesystem::create_directories(path.parent_path());
     std::ofstream file{path};
-    if(file)
+    if(!file)
     {
         return std::unexpected{error_file};
     }
@@ -25,12 +26,12 @@ std::expected<void, std::string_view> eruptor::scene::Scene_saver::Save_scene_da
         resource::Model_handle model_handle{ model_id };
 
         std::println(file, "[{} = {}]", resource_manager->Get_model_alias(model_id), resource_manager->Get_model( model_handle ).path.c_str());
-        std::println(file, "");
 
         if(file_version >= File_version::V1_1)
         {
             std::println(file, "Hitbox: {}", Get_string_from_hitbox_type( resource_manager->Get_model( model_handle ).hitbox_type ));
         }
+        std::println(file, "");
     }
 
     std::println(file, "~~~~~");
@@ -42,7 +43,15 @@ std::expected<void, std::string_view> eruptor::scene::Scene_saver::Save_scene_da
         std::println(file, "<{}>", alias);
         std::println(file, "Model: {}", resource_manager->Get_model_alias( render_object.Get_model_handle() ));
         std::println(file, "Position: {} {} {}", render_object.Get_position().x, render_object.Get_position().y, render_object.Get_position().z);
-        std::println(file, "Rotation: {} {} {}", render_object.Get_rotaion().x, render_object.Get_rotaion().y, render_object.Get_rotaion().z);
+
+        glm::vec3 e = glm::eulerAngles(render_object.Get_rotaion());
+        if(std::abs(std::abs(e.x) - glm::pi<float>()) < 0.01f && std::abs(std::abs(e.z) - glm::pi<float>()) < 0.01f)
+        {
+            e.x = 0.0f;
+            e.y = glm::pi<float>() - e.y;
+            e.z = 0.0f;
+        }
+        std::println(file, "Rotation: {} {} {}", e.x, e.y, e.z);
         std::println(file, "Scale: {} {} {}", render_object.Get_scale().x, render_object.Get_scale().y, render_object.Get_scale().z);
 
         if(file_version >= File_version::V1_2)

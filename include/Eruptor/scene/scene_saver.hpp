@@ -28,7 +28,7 @@ private:
 
     resource::Resource_manager * resource_manager{};
 
-    static const std::string error_file;
+    static const std::string_view error_file;
 };
 
 }
