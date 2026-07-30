@@ -28,10 +28,18 @@ struct Sphere_hitbox
     float radius{};
 };
 
-using Hitbox = std::variant<OBB_hitbox, Sphere_hitbox>;
+struct Capsule_hitbox
+{
+    glm::vec3 start{};
+    glm::vec3 end{};
+    float radius{};
+};
+
+using Hitbox = std::variant<OBB_hitbox, Sphere_hitbox, Capsule_hitbox>;
 
 Sphere_hitbox operator*(const Sphere_hitbox & sphere, const glm::mat4 & mat);
 OBB_hitbox operator*(const OBB_hitbox & obb, const glm::mat4 & mat);
+Capsule_hitbox operator*(const Capsule_hitbox & capsule, const glm::mat4 & mat);
 
 }
 

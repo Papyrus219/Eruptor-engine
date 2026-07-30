@@ -8,6 +8,7 @@
 #include <assimp/material.h>
 #include <glm/glm.hpp>
 #include <filesystem>
+#include <unordered_map>
 
 struct aiScene;
 struct aiNode;
@@ -46,6 +47,9 @@ public:
     physic::Hitbox Get_model_hitbox(Model_handle & model_handle);
     Material Get_material(Material_handle & material_handle);
 
+    void Add_model_alias(uint32_t model_id, const std::string & model_alias);
+    std::string_view Get_model_alias(uint32_t model_id);
+
     Model_handle Add_model(const std::filesystem::path & path);
     void Load_models();
 
@@ -62,6 +66,7 @@ private:
 
     void Calculate_sphere_hitbox(physic::Sphere_hitbox & sphere, std::vector<glm::vec3> & all_vertecies);
     void Calculate_obb_hitbox(physic::OBB_hitbox & obb, std::vector<glm::vec3> & all_vertecies);
+    void Calculate_capsule_hitbox(physic::Capsule_hitbox & capsule, std::vector<glm::vec3> & all_vertecies);
 
     glm::mat3 Compute_covariance(const std::vector<glm::vec3> & all_vertecies, glm::vec3 & centroid);
     glm::mat3 Jacobi_eigenvectors(glm::mat3 & cov, size_t iterations = 20);
@@ -73,8 +78,9 @@ private:
     std::vector<Texture_handle> textures_handles{};
     std::vector<Mesh_handle> mesh_handles{};
 
-    event::Event_manager & event_manager;
+    std::unordered_map<uint32_t, std::string> models_aliases{};
 
+    event::Event_manager & event_manager;
     hardware::Resource_manager * hw_resource_manager{};
 };
 

@@ -11,7 +11,15 @@ namespace eruptor::scene
 
 struct Scene
 {
+    Scene() = default;
+    Scene(const Scene & other);
+    Scene(Scene && other);
+
+    Scene & operator=(const Scene & other);
+    Scene & operator=(Scene && other);
+
     std::unordered_map<std::string, size_t> objects_aliases{};
+    std::unordered_map<size_t, std::string_view> reverse_object_aliases{};
     std::vector<Render_object> render_objects{};
 };
 

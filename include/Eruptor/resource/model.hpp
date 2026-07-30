@@ -19,7 +19,8 @@ enum class Status
 enum class Hitbox_type
 {
     OBB,
-    SPHERE
+    SPHERE,
+    CAPSULE,
 };
 
 struct Model

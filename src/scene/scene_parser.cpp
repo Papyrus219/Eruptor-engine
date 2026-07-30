@@ -1,4 +1,5 @@
 #include <Eruptor/scene/scene_parser.hpp>
+#include <Eruptor/resource/colors.hpp>
 #include <fstream>
 #include <iostream>
 #include <print>
@@ -9,9 +10,9 @@ constexpr bool Debug_mode = true;
 constexpr bool Debug_mode = false;
 #endif
 
-std::string eruptor::scene::Scene_parser::error_file_load{"Failed to load file!"};
-std::string eruptor::scene::Scene_parser::error_text_parsing{"Failed to parse text correctly!"};
-std::string eruptor::scene::Scene_parser::error_numbers_parsing{"Failed to parse numbers correctly!"};
+const std::string eruptor::scene::Scene_parser::error_file_load{"Scene parser: Failed to load file!"};
+const std::string eruptor::scene::Scene_parser::error_text_parsing{"Scene parser: Failed to parse text correctly!"};
+const std::string eruptor::scene::Scene_parser::error_numbers_parsing{"Scene parser: Failed to parse numbers correctly!"};
 
 std::expected<eruptor::scene::Scene, std::string_view> eruptor::scene::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
 {
@@ -29,7 +30,7 @@ std::expected<eruptor::scene::Scene, std::string_view> eruptor::scene::Scene_par
         line_count++;
 
         std::string_view line = buffer_view.substr(pos, end - pos);
-        if(line.size() == 0) //If line empty skip.
+        if(line.size() == 0) //If line empty = skip.
         {
             pos = end + 1;
             continue;
@@ -107,7 +108,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(colon_pos == std::string_view::npos || line.substr(0, colon_pos) != "Version")
             {
-                std::print(std::cerr, "Missing version declaration in top of the file: {}\n", line);
+                std::println(std::cerr, "SCENE PARSER: Missing version declaration in top of the file: {}", line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -117,7 +118,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t version_start = line.find_first_not_of(" ", colon_pos + 1);
             if(version_start == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing version in version declaration: {}\n", line);
+                std::println(std::cerr, "SCENE PARSER: Missing version in version declaration: {}", line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -133,9 +134,14 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             {
                 file_version = Version::V1_1;
             }
+            else if(version == "1_2")
+            {
+                file_version = Version::V1_2;
+            }
+
             else
             {
-                std::print(std::cerr, "Unknown version in version declaration: {}\n", line);
+                std::println(std::cerr, "SCENE PARSER: Unknown version in version declaration: {}", line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -149,7 +155,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
         {
             if(line.back() != ']')
             {
-                std::print(std::cerr, "Missing closing model declaration bracket in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing closing model declaration bracket in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -158,7 +164,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.find('=') == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing assigment sign in model declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing assigment sign in model declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -174,7 +180,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(model_variables.find(model_name) != model_variables.end())
             {
-                std::print(std::cerr, "Redefinition of variable [[{}]] in line {}.\n", model_name, line_count);
+                std::println(std::cerr, "SCENE PARSER: Redefinition of variable [[{}]] in line {}.", model_name, line_count);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -186,7 +192,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if constexpr(Debug_mode)
             {
-                std::print(std::clog, "[{}] = [{}]\n", model_name, model_path);
+                std::println(std::clog, "[{}] = [{}]", model_name, model_path);
             }
 
             if(file_version >= Version::V1_1)
@@ -205,7 +211,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.substr(0, colon_pos) != "Hitbox" || colon_pos == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing hitbox declaration in model declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing hitbox declaration in model declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -215,7 +221,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t type_start = line.find_first_not_of(" ", colon_pos + 1);
             if(type_start == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing hitbox type in model hitbox declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing hitbox type in model hitbox declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -231,9 +237,13 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             {
                 current_parsed_model->hitbox_type = resource::Hitbox_type::SPHERE;
             }
+            else if(hitbox_type == "CAPSULE")
+            {
+                current_parsed_model->hitbox_type = resource::Hitbox_type::CAPSULE;
+            }
             else
             {
-                std::print(std::cerr, "Unknown hitbox type in model hitbox declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Unknown hitbox type in model hitbox declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -247,7 +257,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
         {
             if(line != "~~~~~")
             {
-                std::print(std::cerr, "Wrong amount of '~' sign in end of object declaration expresion in line {}: {}.\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Wrong amount of '~' sign in end of object declaration expresion in line {}: {}.", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -264,7 +274,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
         {
             if(is_in_model_loading_stage)
             {
-                std::print(std::cerr, "Declaring object before finish object loading stage in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Declaring object before finish object loading stage in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -273,7 +283,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.back() != '>')
             {
-                std::print(std::cerr, "Missing closing object declaration bracket in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing closing object declaration bracket in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -284,6 +294,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             scene.render_objects.push_back({});
             scene.objects_aliases[ std::string{line.substr(1, last_object_name_pos - 1)} ] = scene.render_objects.size() - 1 ;
+            scene.reverse_object_aliases[ scene.render_objects.size() - 1 ] = line.substr(1, last_object_name_pos - 1);
 
             line_mode = Line_mode::OBJECT_MODEL;
             break;
@@ -293,7 +304,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t colon_pos = line.find_first_of(":");
             if(colon_pos == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing ':' in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing ':' in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -302,7 +313,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.substr(0, colon_pos) != "Model")
             {
-                std::print(std::cerr, "Missing model for object declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing model for object declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -313,7 +324,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             std::string_view model_variable_name = line.substr(first_variable_name_pos);
             if(model_variables.find(model_variable_name) == model_variables.end())
             {
-                std::print(std::cerr, "Used model name not definded before used in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Used model name not definded before used in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -330,7 +341,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t colon_pos = line.find_first_of(":");
             if(colon_pos == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing ':' in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing ':' in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -339,7 +350,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.substr(0, colon_pos) != "Position")
             {
-                std::print(std::cerr, "Missing position for object declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing position for object declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -366,7 +377,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t colon_pos = line.find_first_of(":");
             if(colon_pos == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing ':' in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing ':' in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -375,7 +386,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.substr(0, colon_pos) != "Rotation")
             {
-                std::print(std::cerr, "Missing rotation for object declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing rotation for object declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -402,7 +413,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             size_t colon_pos = line.find_first_of(":");
             if(colon_pos == std::string_view::npos)
             {
-                std::print(std::cerr, "Missing ':' in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing ':' in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -411,7 +422,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
 
             if(line.substr(0, colon_pos) != "Scale")
             {
-                std::print(std::cerr, "Missing scale for object declaration in line {}: {}\n", line_count, line);
+                std::println(std::cerr, "SCENE PARSER: Missing scale for object declaration in line {}: {}", line_count, line);
 
                 error_happen = true;
                 error_message = error_text_parsing;
@@ -430,11 +441,54 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
                 return;
             }
 
+            if(file_version >= Version::V1_2)
+            {
+                line_mode = Line_mode::OBJECT_COLOR;
+            }
+            else
+            {
+                line_mode = Line_mode::NONE;
+            }
+            break;
+        }
+        case Line_mode::OBJECT_COLOR:
+        {
+            size_t colon_pos = line.find_first_of(":");
+            if(colon_pos == std::string_view::npos)
+            {
+                std::println(std::cerr, "SCENE PARSER: Missing ':' in line {}: {}", line_count, line);
+
+                error_happen = true;
+                error_message = error_text_parsing;
+                return;
+            }
+
+            if(line.substr(0, colon_pos) != "Color")
+            {
+                std::println(std::cerr, "SCENE PARSER: Missing color for object declaration in line {}: {}", line_count, line);
+
+                error_happen = true;
+                error_message = error_text_parsing;
+                return;
+            }
+
+            auto color = Parse_3_numbers( line.substr(colon_pos + 1) );
+            if(color)
+            {
+                scene.render_objects.back().color = resource::Color(color->x, color->y, color->z);
+            }
+            else
+            {
+                error_happen = true;
+                error_message = color.error();
+                return;
+            }
+
             line_mode = Line_mode::NONE;
             break;
         }
         case Line_mode::NONE:
-            std::print(std::cerr, "Unknown syntax in line {}: {}\n", line_count, line);
+            std::println(std::cerr, "SCENE PARSER: Unknown syntax in line {}: {}", line_count, line);
 
             error_happen = true;
             error_message = error_text_parsing;
@@ -453,7 +507,7 @@ std::expected<glm::vec3, std::string_view> eruptor::scene::Scene_parser::Parse_3
         pos = numbers.find_first_not_of(' ', pos);
         if(pos == std::string_view::npos)
         {
-            std::print(std::cerr, "Not enought numbers in line {}.\n", line_count);
+            std::println(std::cerr, "SCENE PARSER: Not enought numbers in line {}.", line_count);
 
             return std::unexpected{error_numbers_parsing};
         }
@@ -464,7 +518,7 @@ std::expected<glm::vec3, std::string_view> eruptor::scene::Scene_parser::Parse_3
         auto [ptr, error_code] = std::from_chars(number.data(), number.data() + number.size(), *numbers_ptrs[i]);
         if(error_code != std::errc{} || ptr != number.data() + number.size())
         {
-            std::print(std::cerr, "Failed to parse numer '{}' in line {}.", number, line_count);
+            std::println(std::cerr, "SCENE PARSER: Failed to parse numer '{}' in line {}.", number, line_count);
 
             return std::unexpected{error_numbers_parsing};
         }

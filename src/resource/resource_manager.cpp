@@ -65,6 +65,16 @@ eruptor::resource::Material eruptor::resource::Resource_manager::Get_material(Ma
     return materials[ material_handle.Get_id() ];
 }
 
+void eruptor::resource::Resource_manager::Add_model_alias(uint32_t model_id, const std::string & model_alias)
+{
+    models_aliases[ model_id ] = model_alias;
+}
+
+std::string_view eruptor::resource::Resource_manager::Get_model_alias(uint32_t model_id)
+{
+    return models_aliases[ model_id ];
+}
+
 eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(const std::filesystem::path & path)
 {
     auto it = std::ranges::find_if(models,
@@ -263,6 +273,12 @@ void eruptor::resource::Resource_manager::Calculate_model_hitbox(Model & model, 
 
         hitbox = sphere_hitbox;
     }
+    else if(model.hitbox_type ==  Hitbox_type::CAPSULE)
+    {
+        physic::Capsule_hitbox capsule_hitbox{};
+        Calculate_capsule_hitbox(capsule_hitbox, all_vertecies);
+        hitbox = capsule_hitbox;
+    }
 
     models_AABB.push_back(aabb);
     models_hitboxes.push_back(hitbox);
@@ -295,53 +311,6 @@ void eruptor::resource::Resource_manager::Calculate_sphere_hitbox(physic::Sphere
     }
 
     sphere.radius = std::sqrt(max_dist_sq);
-
-    // int min_id{}, max_id{}, min_x_id{}, min_y_id{}, min_z_id{}, max_x_id{}, max_y_id{}, max_z_id{};
-    // for(auto i{0UZ}; i < all_vertecies.size(); i++)
-    // {
-    //     if(all_vertecies[i].x < all_vertecies[min_x_id].x) min_x_id = i;
-    //     if(all_vertecies[i].y < all_vertecies[min_y_id].y) min_y_id = i;
-    //     if(all_vertecies[i].z < all_vertecies[min_z_id].z) min_z_id = i;
-    //     if(all_vertecies[i].x > all_vertecies[max_x_id].x) max_x_id = i;
-    //     if(all_vertecies[i].y > all_vertecies[max_y_id].y) max_y_id = i;
-    //     if(all_vertecies[i].z > all_vertecies[max_z_id].z) max_z_id = i;
-    // }
-    //
-    // float dist_x_squared = glm::dot(all_vertecies[max_x_id] - all_vertecies[min_x_id], all_vertecies[max_x_id] - all_vertecies[min_x_id]);
-    // float dist_y_squared = glm::dot(all_vertecies[max_y_id] - all_vertecies[min_y_id], all_vertecies[max_y_id] - all_vertecies[min_y_id]);
-    // float dist_z_squared = glm::dot(all_vertecies[max_z_id] - all_vertecies[min_z_id], all_vertecies[max_z_id] - all_vertecies[min_z_id]);
-    //
-    // min_id = min_x_id;
-    // max_id = max_x_id;
-    // if(dist_y_squared > dist_x_squared && dist_y_squared > dist_z_squared)
-    // {
-    //     min_id = min_y_id;
-    //     max_id = max_y_id;
-    // }
-    // if(dist_z_squared > dist_x_squared && dist_z_squared > dist_y_squared)
-    // {
-    //     min_id = min_z_id;
-    //     max_id = max_z_id;
-    // }
-    //
-    // sphere.center = (all_vertecies[min_id] + all_vertecies[max_id]) * 0.5f;
-    // sphere.radius = std::sqrt( glm::dot(all_vertecies[max_id] - sphere.center, all_vertecies[max_id] - sphere.center) );
-    //
-    // for(auto i{0UZ}; i < all_vertecies.size(); i++)
-    // {
-    //     glm::vec3 dis = all_vertecies[i] - sphere.center;
-    //     float distance_squared = glm::dot(dis, dis);
-    //
-    //     if(distance_squared > sphere.radius * sphere.radius)
-    //     {
-    //         float distance = std::sqrt( distance_squared );
-    //         float new_radius = (sphere.radius + distance) * 0.5f;
-    //         float k = (new_radius - sphere.radius) / distance;
-    //
-    //         sphere.radius = new_radius;
-    //         sphere.center += dis * k;
-    //     }
-    // }
 }
 
 void eruptor::resource::Resource_manager::Calculate_obb_hitbox(physic::OBB_hitbox & obb, std::vector<glm::vec3> & all_vertecies)
@@ -373,6 +342,72 @@ void eruptor::resource::Resource_manager::Calculate_obb_hitbox(physic::OBB_hitbo
     obb.axies[0] = axis_x;
     obb.axies[1] = axis_y;
     obb.axies[2] = axis_z;
+}
+
+void eruptor::resource::Resource_manager::Calculate_capsule_hitbox(physic::Capsule_hitbox & capsule, std::vector<glm::vec3> & all_vertecies)
+{
+    if (all_vertecies.empty()) return;
+
+    glm::vec3 centroid{};
+    glm::mat3 cov = Compute_covariance(all_vertecies, centroid);
+    glm::mat3 eigen_vectors = Jacobi_eigenvectors(cov);
+
+    // 1. Sprawdź wszystkie 3 osie i wybierz tę, która daje największą rozpiętość (najdłuższy wymiar modelu)
+    glm::vec3 best_axis{1.0f, 0.0f, 0.0f};
+    float max_span = -1.0f;
+    float best_min_proj = 0.0f;
+    float best_max_proj = 0.0f;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        glm::vec3 axis = glm::normalize(glm::vec3{eigen_vectors[i]});
+        if (glm::dot(axis, axis) < 1e-4f) continue;
+
+        float min_p = std::numeric_limits<float>::max();
+        float max_p = std::numeric_limits<float>::lowest();
+
+        for (const auto & vert : all_vertecies)
+        {
+            float proj = glm::dot(vert - centroid, axis);
+            min_p = std::min(min_p, proj);
+            max_p = std::max(max_p, proj);
+        }
+
+        float span = max_p - min_p;
+        if (span > max_span)
+        {
+            max_span = span;
+            best_axis = axis;
+            best_min_proj = min_p;
+            best_max_proj = max_p;
+        }
+    }
+
+    // 2. Ustaw faktyczne punkty początkowe i końcowe kapsuły na pełnym zakresie modelu (bez sztucznego obcinania paddingiem)
+    capsule.start = centroid + best_axis * best_min_proj;
+    capsule.end = centroid + best_axis * best_max_proj;
+
+    // 3. Oblicz promień jako maksymalną odległość wierzchołka od odcinka [start, end]
+    float max_dist_sq = 0.0f;
+    glm::vec3 ba = capsule.end - capsule.start;
+    float ba_len_sq = glm::dot(ba, ba);
+
+    for (const auto & vert : all_vertecies)
+    {
+        glm::vec3 pa = vert - capsule.start;
+        float t = (ba_len_sq > 1e-6f) ? glm::dot(pa, ba) / ba_len_sq : 0.0f;
+        t = glm::clamp(t, 0.0f, 1.0f);
+
+        glm::vec3 closest_point = capsule.start + t * ba;
+        float dist_sq = glm::dot(vert - closest_point, vert - closest_point);
+
+        if (dist_sq > max_dist_sq)
+        {
+            max_dist_sq = dist_sq;
+        }
+    }
+
+    capsule.radius = std::sqrt(max_dist_sq);
 }
 
 glm::mat3 eruptor::resource::Resource_manager::Compute_covariance(const std::vector<glm::vec3>& all_vertecies, glm::vec3& centroid)
@@ -433,7 +468,6 @@ glm::mat3 eruptor::resource::Resource_manager::Jacobi_eigenvectors(glm::mat3 & c
 
     return v;
 }
-
 
 void eruptor::resource::Resource_manager::On_event(const event::Event & event)
 {

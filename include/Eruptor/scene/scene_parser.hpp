@@ -44,20 +44,22 @@ private:
         OBJECT_POSITION,
         OBJECT_ROTATION,
         OBJECT_SCALE,
+        OBJECT_COLOR,
     } line_mode{};
 
     enum class Version
     {
         V1_0,
         V1_1,
+        V1_2,
     } file_version;
 
     bool error_happen{};
     std::string_view error_message{};
 
-    static std::string error_file_load;
-    static std::string error_text_parsing;
-    static std::string error_numbers_parsing;
+    static const std::string error_file_load;
+    static const std::string error_text_parsing;
+    static const std::string error_numbers_parsing;
 };
 
 }

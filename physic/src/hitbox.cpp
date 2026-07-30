@@ -15,7 +15,7 @@ eruptor::physic::Sphere_hitbox eruptor::physic::operator*(const Sphere_hitbox & 
     return result;
 }
 
-eruptor::physic::OBB_hitbox eruptor::physic::operator*(const OBB_hitbox & obb, const glm::mat4& mat)
+eruptor::physic::OBB_hitbox eruptor::physic::operator*(const OBB_hitbox & obb, const glm::mat4 & mat)
 {
     OBB_hitbox result{};
     result.center = glm::vec3{mat * glm::vec4{obb.center, 1.0f}};
@@ -37,3 +37,32 @@ eruptor::physic::OBB_hitbox eruptor::physic::operator*(const OBB_hitbox & obb, c
 
     return result;
 }
+
+eruptor::physic::Capsule_hitbox eruptor::physic::operator*(const Capsule_hitbox & capsule, const glm::mat4 & mat)
+{
+    eruptor::physic::Capsule_hitbox result{};
+    result.start = glm::vec3{mat * glm::vec4{capsule.start, 1.0f}};
+    result.end = glm::vec3{mat * glm::vec4{capsule.end, 1.0f}};
+
+    float scale_x = glm::length(glm::vec3{mat[0]});
+    float scale_y = glm::length(glm::vec3{mat[1]});
+    float scale_z = glm::length(glm::vec3{mat[2]});
+    float max_scale = std::max({scale_x, scale_y, scale_z});
+
+    result.radius = capsule.radius * max_scale;
+    return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

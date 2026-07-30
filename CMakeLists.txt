@@ -23,6 +23,7 @@ set(SCENE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/render_object.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/transformation.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene_parser.cpp
+              ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene_saver.cpp
 )
 
 set(ENGINE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/eruptor.cpp

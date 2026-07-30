@@ -60,6 +60,10 @@ eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
         {
             transformed_hitbox = std::get<physic::OBB_hitbox>(model_hitbox) * Get_model_matrix();
         }
+        else if(hitbox_type == resource::Hitbox_type::CAPSULE)
+        {
+            transformed_hitbox = std::get<physic::Capsule_hitbox>(model_hitbox) * Get_model_matrix();
+        }
 
         hitbox_has_changed = false;
     }
@@ -97,6 +101,15 @@ void eruptor::scene::Render_object::Set_rotation_euler(glm::vec3 new_rotation)
     aabb_has_changed = true;
     hitbox_has_changed = true;
 }
+
+void eruptor::scene::Render_object::Set_rotation_quad(glm::quat new_rotation)
+{
+    transformation.Set_rotation_quad( new_rotation );
+
+    aabb_has_changed = true;
+    hitbox_has_changed = true;
+}
+
 
 void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
 {

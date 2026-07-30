@@ -12,16 +12,16 @@ class Transformation
 public:
     [[nodiscard]] const glm::mat4x4 & Get_model_matrix();
 
-    [[nodiscard]] glm::vec3 Get_position() { return position; }
-    [[nodiscard]] glm::quat Get_rotation() { return rotation; }
-    [[nodiscard]] glm::vec3 Get_scale() {return scale; }
+    [[nodiscard]] glm::vec3 Get_position() const { return position; }
+    [[nodiscard]] glm::quat Get_rotation() const { return rotation; }
+    [[nodiscard]] glm::vec3 Get_scale() const {return scale; }
 
     void Set_position(glm::vec3 position) {this->position = position; has_changed = true;}
     void Set_rotation_euler(glm::vec3 rotation) {this->rotation = glm::normalize(glm::quat(rotation)); has_changed = true;}
     void Set_rotation_quad(glm::quat rotation) {this->rotation = glm::normalize(rotation); has_changed = true;}
     void Set_scale(glm::vec3 scale) {this->scale = scale; has_changed = true;}
 
-    bool Get_is_has_changed() {return has_changed;}
+    bool Get_is_has_changed() const {return has_changed;}
 
 private:
     bool has_changed{true};
