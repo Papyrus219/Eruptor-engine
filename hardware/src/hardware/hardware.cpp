@@ -14,7 +14,7 @@ void eruptor::hardware::Hardware::Init()
     command_manager.Init(device, MAX_FRAMES_IN_FLIGHT);
     resource_manager.Assign_device( device );
     resource_manager.Assign_command_manager( command_manager );
-    resource_manager.Init(device.Get_alocator_handle(), 256_MiB, 256_MiB, 256_MiB );
+    resource_manager.Init(device.Get_alocator_handle(), 256_MiB, 256_MiB, 256_MiB, 64_MiB);
 
     pipelines.Init(device, swapchain, uniform_buffers, resource_manager);
 }

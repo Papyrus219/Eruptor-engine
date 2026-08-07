@@ -7,6 +7,6 @@ set(PHYSIC_SRC ${CMAKE_CURRENT_LIST_DIR}/src/hitbox.cpp
 
 Make_library(TARGET eruptor_physic
 SOURCES PHYSIC_SRC
-LIBRARIES_TO_LINK_PRIV glm::glm eruptor_event eruptor_scene
+LIBRARIES_TO_LINK_PRIV glm::glm eruptor_event eruptor_scene project_compiler_warmings
 COMPILATION_FEATURES cxx_std_23
 )

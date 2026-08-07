@@ -94,7 +94,7 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
 
             auto aabb = object.Get_aabb();
 
-            push_constant_debug.color = object.is_coliding ?  glm::vec3{1.0f, 0.0f, 0.0f} : glm::vec3{0.0f, 0.0f, 1.0f};
+            push_constant_debug.color = object.is_selected ?  glm::vec3{1.0f, 0.0f, 0.0f} : glm::vec3{0.0f, 0.0f, 1.0f};
             push_constant_debug.min = aabb.min;
             push_constant_debug.max = aabb.max;
 
@@ -104,6 +104,20 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
             render_queue.debug_queue.push_back( debug_request );
        }
     }
+}
+
+void eruptor::renderer::Renderer::Stage_text_render_data(std::string_view text, float x, float y, resource::Font_handle font_handle, glm::u8vec4 color)
+{
+    Text_render_request request{};
+    static_assert(sizeof(resource::Text_vertex_data) == sizeof(hardware::Text_vertex));
+
+    auto text_verticies = rs_resource_manager->Generate_text_vertices_data(text, x, y, font_handle, color);
+    request.vertices.resize( text_verticies.size() );
+    memcpy(request.vertices.data(), text_verticies.data(), text_verticies.size() * sizeof( hardware::Text_vertex ));
+
+    request.font_texture_id = rs_resource_manager->Get_font_atlas( font_handle ).texture_handle;
+
+    render_queue.text_queue.push_back( std::move(request) );
 }
 
 void eruptor::renderer::Renderer::Flush_render_buffor()
@@ -206,6 +220,25 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
         }
     }
 
+    hw_resource_manager->Start_staging_text(current_frame);
+
+    command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::TEXT));
+
+    hardware::Push_constant_text pc_text{};
+    pc_text.screen_size = glm::vec2{swap_chain.Get_extent().width, swap_chain.Get_extent().height};
+    command_buffor.pushConstants<hardware::Push_constant_text>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::TEXT), vk::ShaderStageFlagBits::eVertex, 0, pc_text);
+
+    hw_resource_manager->Bind_text_buffer(command_buffor, current_frame);
+
+    for(auto & render_request : render_queue.text_queue)
+    {
+        uint32_t first_vertex = hw_resource_manager->Stage_text_data(render_request.vertices, current_frame);
+
+        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout( hardware::Pipeline_id::TEXT ), 0, *hw_resource_manager->Get_texture_descriptor_set( render_request.font_texture_id ), nullptr);
+
+        command_buffor.draw(render_request.vertices.size(), 1, first_vertex, 0);
+    }
+
     command_buffor.endRendering();
 
     hardware::utilities::Transition_image_layout(
@@ -237,10 +270,11 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
             break;
     }
 
-    current_frame = (current_frame + 1) % static_cast<uint32_t>(hardware->MAX_FRAMES_IN_FLIGHT);
+    current_frame = (current_frame + 1) % static_cast<uint32_t>(hardware::MAX_FRAMES_IN_FLIGHT);
 
     render_queue.opaque_queue.clear();
     render_queue.debug_queue.clear();
+    render_queue.text_queue.clear();
 }
 
 void eruptor::renderer::Renderer::On_event(const event::Event & event)

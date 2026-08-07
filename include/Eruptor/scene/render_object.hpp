@@ -43,7 +43,7 @@ struct Render_object
 
     resource::Color color{};
     uint32_t parent_object_index{}; ///NOTE Curently not in use
-    bool is_coliding{};
+    bool is_selected{};
 
 private:
     void Snap_to_y(float target_y);

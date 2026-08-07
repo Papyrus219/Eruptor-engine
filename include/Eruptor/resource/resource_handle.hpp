@@ -10,6 +10,7 @@ struct Model_tag{};
 struct Mesh_tag{};
 struct Texture_tag{};
 struct Material_tag{};
+struct Font_tag{};
 
 template<typename TAG>
 class Resource_handle
@@ -35,6 +36,7 @@ using Model_handle = Resource_handle<Model_tag>;
 using Mesh_handle = Resource_handle<Mesh_tag>;
 using Texture_handle = Resource_handle<Texture_tag>;
 using Material_handle = Resource_handle<Material_tag>;
+using Font_handle = Resource_handle<Font_tag>;
 
 }
 

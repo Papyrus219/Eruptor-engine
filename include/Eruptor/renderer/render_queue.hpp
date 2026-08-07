@@ -12,6 +12,7 @@ struct Render_queue
 {
     std::vector< Render_request<hardware::Push_constant_opaque> > opaque_queue{};
     std::vector< Render_request<hardware::Push_constant_debug> > debug_queue{};
+    std::vector< Text_render_request > text_queue{};
 };
 
 }

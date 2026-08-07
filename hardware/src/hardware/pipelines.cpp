@@ -26,6 +26,7 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
 {
     vk::raii::ShaderModule opaque_shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/opaque_shader.spv"));
     vk::raii::ShaderModule debug_shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/debug_shader.spv"));
+    vk::raii::ShaderModule text_shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/text_shader.spv"));
 
     vk::PipelineShaderStageCreateInfo vertex_shader_stage_opaque_info{};
     vertex_shader_stage_opaque_info.setStage( vk::ShaderStageFlagBits::eVertex );
@@ -47,26 +48,46 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     fragment_shader_stage_debug_info.setModule( debug_shader_module );
     fragment_shader_stage_debug_info.setPName( "Frag_main" );
 
+    vk::PipelineShaderStageCreateInfo vertex_shader_stage_text_info{};
+    vertex_shader_stage_text_info.setStage( vk::ShaderStageFlagBits::eVertex );
+    vertex_shader_stage_text_info.setModule( text_shader_module );
+    vertex_shader_stage_text_info.setPName( "Vert_main" );
+
+    vk::PipelineShaderStageCreateInfo fragment_shader_stage_text_info{};
+    fragment_shader_stage_text_info.setStage( vk::ShaderStageFlagBits::eFragment );
+    fragment_shader_stage_text_info.setModule( text_shader_module );
+    fragment_shader_stage_text_info.setPName( "Frag_main" );
+
     vk::PipelineShaderStageCreateInfo opaque_shader_stages[] = {vertex_shader_stage_opaque_info, fragment_shader_stage_opaque_info };
     vk::PipelineShaderStageCreateInfo debug_shader_stages[] = {vertex_shader_stage_debug_info, fragment_shader_stage_debug_info};
+    vk::PipelineShaderStageCreateInfo text_shader_stages[] = {vertex_shader_stage_text_info, fragment_shader_stage_text_info};
 
     std::vector<vk::DynamicState> dynamic_states = {vk::DynamicState::eViewport, vk::DynamicState::eScissor};
     vk::PipelineDynamicStateCreateInfo dynamic_state_info{};
     dynamic_state_info.setDynamicStates( dynamic_states );
 
-    auto opaque_biding_description = Vertex::Get_binding_descriptor();
-    auto opaque_attribute_description = Vertex::Get_attribute_descriptions();
+    auto opaque_biding_description = Opaque_vertex::Get_binding_descriptor();
+    auto opaque_attribute_description = Opaque_vertex::Get_attribute_descriptions();
     vk::PipelineVertexInputStateCreateInfo opaque_vertex_input_info{};
     opaque_vertex_input_info.setVertexBindingDescriptions(opaque_biding_description);
     opaque_vertex_input_info.setVertexAttributeDescriptions(opaque_attribute_description);
 
     vk::PipelineVertexInputStateCreateInfo debug_vertex_input_info{};
 
+    auto text_biding_description = Text_vertex::Get_binding_descriptor();
+    auto text_attribute_descripton = Text_vertex::Get_attribute_descriptions();
+    vk::PipelineVertexInputStateCreateInfo text_vertex_input_info{};
+    text_vertex_input_info.setVertexBindingDescriptions( text_biding_description );
+    text_vertex_input_info.setVertexAttributeDescriptions( text_attribute_descripton );
+
     vk::PipelineInputAssemblyStateCreateInfo opaque_input_assembly{};
     opaque_input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
 
     vk::PipelineInputAssemblyStateCreateInfo debug_input_assembly{};
     debug_input_assembly.setTopology( vk::PrimitiveTopology::eLineList );
+
+    vk::PipelineInputAssemblyStateCreateInfo text_input_assembly{};
+    text_input_assembly.setTopology( vk::PrimitiveTopology::eTriangleList );
 
     auto swapchain_extent = swapchain.Get_extent();
     vk::Viewport viewport{0.0f, 0.0f, static_cast<float>(swapchain_extent.width), static_cast<float>(swapchain_extent.height), 0.0f, 1.0f};
@@ -105,27 +126,42 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     opaque_depth_stencil.depthBoundsTestEnable = vk::False;
     opaque_depth_stencil.stencilTestEnable = vk::False;
 
-    vk::PipelineDepthStencilStateCreateInfo debug_depth_stencil{};
-    debug_depth_stencil.setDepthTestEnable( vk::False );
-    debug_depth_stencil.setDepthWriteEnable( vk::False );
-    debug_depth_stencil.setDepthCompareOp( vk::CompareOp::eLess );
-    debug_depth_stencil.setDepthBoundsTestEnable( vk::False );
-    debug_depth_stencil.setStencilTestEnable( vk::False );
+    vk::PipelineDepthStencilStateCreateInfo debug_text_depth_stencil{};
+    debug_text_depth_stencil.setDepthTestEnable( vk::False );
+    debug_text_depth_stencil.setDepthWriteEnable( vk::False );
+    debug_text_depth_stencil.setDepthCompareOp( vk::CompareOp::eLess );
+    debug_text_depth_stencil.setDepthBoundsTestEnable( vk::False );
+    debug_text_depth_stencil.setStencilTestEnable( vk::False );
 
-    vk::PipelineColorBlendAttachmentState color_blend_attachment{};
-    color_blend_attachment.blendEnable = vk::False;
-    color_blend_attachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-    color_blend_attachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-    color_blend_attachment.colorBlendOp = vk::BlendOp::eAdd;
-    color_blend_attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    color_blend_attachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    color_blend_attachment.alphaBlendOp = vk::BlendOp::eAdd;
-    color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+    vk::PipelineColorBlendAttachmentState standard_color_blend_attachment{};
+    standard_color_blend_attachment.blendEnable = vk::False;
+    standard_color_blend_attachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+    standard_color_blend_attachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+    standard_color_blend_attachment.colorBlendOp = vk::BlendOp::eAdd;
+    standard_color_blend_attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    standard_color_blend_attachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    standard_color_blend_attachment.alphaBlendOp = vk::BlendOp::eAdd;
+    standard_color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
-    vk::PipelineColorBlendStateCreateInfo color_blending{};
-    color_blending.logicOpEnable = vk::False;
-    color_blending.logicOp = vk::LogicOp::eCopy;
-    color_blending.setAttachments( color_blend_attachment );
+    vk::PipelineColorBlendAttachmentState text_color_blend_attachment{};
+    text_color_blend_attachment.setBlendEnable( vk::True );
+    text_color_blend_attachment.setSrcColorBlendFactor( vk::BlendFactor::eSrcAlpha );
+    text_color_blend_attachment.setDstColorBlendFactor( vk::BlendFactor::eOneMinusSrcAlpha );
+    text_color_blend_attachment.setColorBlendOp( vk::BlendOp::eAdd );
+    text_color_blend_attachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+    text_color_blend_attachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+    text_color_blend_attachment.alphaBlendOp = vk::BlendOp::eAdd;
+    text_color_blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+
+    vk::PipelineColorBlendStateCreateInfo standard_color_blending{};
+    standard_color_blending.logicOpEnable = vk::False;
+    standard_color_blending.logicOp = vk::LogicOp::eCopy;
+    standard_color_blending.setAttachments( standard_color_blend_attachment );
+
+    vk::PipelineColorBlendStateCreateInfo text_color_blending{};
+    text_color_blending.logicOpEnable = vk::False;
+    text_color_blending.logicOp = vk::LogicOp::eCopy;
+    text_color_blending.setAttachments( text_color_blend_attachment );
 
     vk::PushConstantRange opaque_push_constant_range{};
     opaque_push_constant_range.setStageFlags( vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
@@ -136,6 +172,11 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     debug_push_constant_range.setStageFlags( vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment );
     debug_push_constant_range.setOffset( 0 );
     debug_push_constant_range.setSize( sizeof(Push_constant_debug) );
+
+    vk::PushConstantRange text_push_constant_range{};
+    text_push_constant_range.setStageFlags( vk::ShaderStageFlagBits::eVertex );
+    text_push_constant_range.setOffset( 0 );
+    text_push_constant_range.setSize( sizeof(Push_constant_text) );
 
     std::array<vk::DescriptorSetLayout, 2> opaque_set_layouts
     {
@@ -148,6 +189,11 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
         *uniforms_buffers.Get_descriptor_set_layout()
     };
 
+    std::array<vk::DescriptorSetLayout, 1> text_set_layouts
+    {
+        *resource_manager.Get_texture_set_layout()
+    };
+
     vk::PipelineLayoutCreateInfo opaque_pipeline_layout_info{};
     opaque_pipeline_layout_info.setSetLayouts( opaque_set_layouts );
     opaque_pipeline_layout_info.setPushConstantRanges( opaque_push_constant_range );
@@ -156,11 +202,17 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     debug_pipeline_layout_info.setSetLayouts( debug_set_layouts );
     debug_pipeline_layout_info.setPushConstantRanges( debug_push_constant_range );
 
+    vk::PipelineLayoutCreateInfo text_pipeline_layout_info{};
+    text_pipeline_layout_info.setSetLayouts( text_set_layouts  );
+    text_pipeline_layout_info.setPushConstantRanges( text_push_constant_range );
+
     pipeline_layouts[ std::to_underlying( Pipeline_id::OPAQUE ) ].emplace( device.Get_device_handle(), opaque_pipeline_layout_info );
     pipeline_layouts[ std::to_underlying( Pipeline_id::DEBUG ) ].emplace( device.Get_device_handle(), debug_pipeline_layout_info );
+    pipeline_layouts[ std::to_underlying( Pipeline_id::TEXT ) ].emplace( device.Get_device_handle(), text_pipeline_layout_info );
 
     vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> opaque_pipeline_create_info_chain = {vk::GraphicsPipelineCreateInfo{}, vk::PipelineRenderingCreateInfo{}};
     vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> debug_pipeline_create_info_chain = {vk::GraphicsPipelineCreateInfo{}, vk::PipelineRenderingCreateInfo{}};
+    vk::StructureChain<vk::GraphicsPipelineCreateInfo, vk::PipelineRenderingCreateInfo> text_pipeline_create_info_chain = {vk::GraphicsPipelineCreateInfo{}, vk::PipelineRenderingCreateInfo{}};
 
     auto depth_format = swapchain.Find_depth_format(device);
 
@@ -171,7 +223,7 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pRasterizationState = &opaque_rasterizer;
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDepthStencilState = &opaque_depth_stencil;
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pMultisampleState = &multisampling;
-    opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pColorBlendState = &color_blending;
+    opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pColorBlendState = &standard_color_blending;
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDynamicState = &dynamic_state_info;
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().layout = *pipeline_layouts[ std::to_underlying( Pipeline_id::OPAQUE ) ];
     opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().renderPass = nullptr;
@@ -184,9 +236,9 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pInputAssemblyState = &debug_input_assembly;
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pViewportState = &viewport_state;
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pRasterizationState = &debug_rasterizer;
-    debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDepthStencilState = &debug_depth_stencil;
+    debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDepthStencilState = &debug_text_depth_stencil;
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pMultisampleState = &multisampling;
-    debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pColorBlendState = &color_blending;
+    debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pColorBlendState = &standard_color_blending;
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDynamicState = &dynamic_state_info;
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().layout = *pipeline_layouts[ std::to_underlying( Pipeline_id::DEBUG ) ];
     debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().renderPass = nullptr;
@@ -194,8 +246,24 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
     debug_pipeline_create_info_chain.get<vk::PipelineRenderingCreateInfo>().pColorAttachmentFormats = & swapchain.Get_surface_format().format;
     debug_pipeline_create_info_chain.get<vk::PipelineRenderingCreateInfo>().depthAttachmentFormat = depth_format;
 
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().setStages(text_shader_stages);
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pVertexInputState = &text_vertex_input_info;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pInputAssemblyState = &text_input_assembly;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pViewportState = &viewport_state;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pRasterizationState = &opaque_rasterizer;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDepthStencilState = &debug_text_depth_stencil;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pMultisampleState = &multisampling;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pColorBlendState = &text_color_blending;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().pDynamicState = &dynamic_state_info;
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().layout = *pipeline_layouts[ std::to_underlying( Pipeline_id::TEXT ) ];
+    text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>().renderPass = nullptr;
+    text_pipeline_create_info_chain.get<vk::PipelineRenderingCreateInfo>().colorAttachmentCount = 1;
+    text_pipeline_create_info_chain.get<vk::PipelineRenderingCreateInfo>().pColorAttachmentFormats = & swapchain.Get_surface_format().format;
+    text_pipeline_create_info_chain.get<vk::PipelineRenderingCreateInfo>().depthAttachmentFormat = depth_format;
+
     pipelines[ std::to_underlying( Pipeline_id::OPAQUE ) ].emplace( device.Get_device_handle(), nullptr, opaque_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>() );
     pipelines[ std::to_underlying( Pipeline_id::DEBUG ) ].emplace( device.Get_device_handle(), nullptr, debug_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>() );
+    pipelines[ std::to_underlying( Pipeline_id::TEXT ) ].emplace( device.Get_device_handle(), nullptr, text_pipeline_create_info_chain.get<vk::GraphicsPipelineCreateInfo>() );
 }
 
 vk::raii::ShaderModule eruptor::hardware::Pipelines::Create_shader_module(Device& device, const std::vector<char>& code) const

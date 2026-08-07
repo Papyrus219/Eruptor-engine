@@ -10,6 +10,7 @@ enum class Pipeline_id: uint8_t
 {
     OPAQUE,
     DEBUG,
+    TEXT,
     COUNT
 };
 

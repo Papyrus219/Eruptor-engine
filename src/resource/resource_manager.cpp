@@ -1,5 +1,7 @@
 #include <Eruptor/resource_manager.hpp>
+
 #define STB_IMAGE_IMPLEMENTATION
+
 #include <Eruptor/resource/stb_image.h>
 #include <Eruptor/hardware/resources/resource_manager.hpp>
 #include <Eruptor/event/event_manager.hpp>
@@ -8,16 +10,10 @@
 #include <assimp/postprocess.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
-#include <print>
 
-namespace
-{
-    glm::mat4 Convert_matrix(const aiMatrix4x4 & m)
-    {
-        return glm::transpose(glm::make_mat4(&m.a1));
-    }
-}
+#include <iostream>
+#include <fstream>
+#include <print>
 
 eruptor::resource::Resource_manager::Resource_manager(): event_manager{ event::event_manager }
 {
@@ -40,6 +36,11 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
 
     textures_handles.push_back( Texture_handle{ hw_resource_manager.Stage_texture_data( tex_data ) } );
     stbi_image_free( tex_data.pixels );
+
+    if(FT_Init_FreeType(&free_type))
+    {
+        throw std::runtime_error{"Failed to init FreeType."};
+    }
 
     event_manager.Add_listener( *this );
 }
@@ -73,6 +74,197 @@ void eruptor::resource::Resource_manager::Add_model_alias(uint32_t model_id, con
 std::string_view eruptor::resource::Resource_manager::Get_model_alias(uint32_t model_id)
 {
     return models_aliases[ model_id ];
+}
+
+eruptor::resource::Font_atlas & eruptor::resource::Resource_manager::Get_font_atlas(Font_handle & font_handle)
+{
+    return fonts_atlases[ font_handle.Get_id() ];
+}
+
+eruptor::resource::Font_handle eruptor::resource::Resource_manager::Add_font_atlas(const std::filesystem::path & path, float font_size)
+{
+    for(auto i{0UZ}; i < fonts_atlases.size(); i++)
+    {
+        if(fonts_atlases[i].path == path)
+        {
+            Font_handle font_handle{ static_cast<uint32_t>(i) };
+            return font_handle;
+        }
+    }
+
+    Font_atlas atlas{};
+    atlas.path = path;
+    atlas.size = font_size;
+    atlas.width = 1024;
+    atlas.height = 1024;
+    atlas.bitmap.resize(atlas.width * atlas.height);
+    atlas.starus = Status::PENDING;
+
+    fonts_atlases.push_back( atlas );
+
+    Font_handle font_handle{ static_cast<uint32_t>(fonts_atlases.size() - 1) };
+
+    return font_handle;
+}
+
+void eruptor::resource::Resource_manager::Load_font_atlases()
+{
+    for(auto & font_atlas : fonts_atlases)
+    {
+        Load_font( font_atlas );
+        font_atlas.starus = Status::LODADED;
+    }
+
+    hw_resource_manager->Upload_data_to_GPU();
+}
+
+void eruptor::resource::Resource_manager::Load_font(Font_atlas & font_atlas)
+{
+    FT_Face face{};
+
+    if(FT_New_Face(free_type, font_atlas.path.c_str(), 0, &face))
+    {
+        throw std::runtime_error{"Failed to load font"};
+    }
+
+    FT_Set_Pixel_Sizes(face, 0, static_cast<uint32_t>(font_atlas.size));
+
+    std::fill(font_atlas.bitmap.begin(), font_atlas.bitmap.end(), 0);
+
+    font_atlas.glyphs.clear();
+
+
+    uint32_t x{};
+    uint32_t y{};
+    uint32_t row_height{};
+
+
+    for(char32_t c{32}; c < 127; c++)
+    {
+        if(FT_Load_Char(face, c, FT_LOAD_RENDER))
+        {
+            continue;
+        }
+
+
+        FT_GlyphSlot glyph = face->glyph;
+
+        Glyph info{};
+
+        info.size = {static_cast<int>(glyph->bitmap.width), static_cast<int>(glyph->bitmap.rows)};
+
+        info.bearing = {glyph->bitmap_left, glyph->bitmap_top};
+
+        info.advance = glyph->advance.x >> 6;
+
+
+        if(glyph->bitmap.width == 0 || glyph->bitmap.rows == 0)
+        {
+            font_atlas.glyphs[c] = info;
+            continue;
+        }
+
+
+        if(x + glyph->bitmap.width >= font_atlas.width)
+        {
+            x = 0;
+            y += row_height + 2;
+            row_height = 0;
+        }
+
+
+
+        if(y + glyph->bitmap.rows >= font_atlas.height)
+        {
+            FT_Done_Face(face);
+            throw std::runtime_error{"Font atlas is too small"};
+        }
+
+        for(uint32_t row{}; row < glyph->bitmap.rows; row++)
+        {
+            for(uint32_t col{}; col < glyph->bitmap.width; col++)
+            {
+                font_atlas.bitmap[(y + row) * font_atlas.width + x + col] = glyph->bitmap.buffer[ row * glyph->bitmap.pitch + col ];
+            }
+        }
+
+        info.uv_min = {static_cast<float>(x) / font_atlas.width, static_cast<float>(y) / font_atlas.height};
+
+        info.uv_max = {static_cast<float>(x + glyph->bitmap.width) / font_atlas.width, static_cast<float>(y + glyph->bitmap.rows) / font_atlas.height};
+
+
+        font_atlas.glyphs[c] = info;
+
+        row_height = std::max(row_height, glyph->bitmap.rows);
+
+        x += glyph->bitmap.width + 2;
+    }
+
+    FT_Done_Face(face);
+
+    hardware::Texture_data texture_data{};
+
+    texture_data.width = font_atlas.width;
+    texture_data.height = font_atlas.height;
+    texture_data.tex_chanels = 1;
+    texture_data.pixels = font_atlas.bitmap.data();
+    texture_data.format = vk::Format::eR8Unorm;
+
+    Texture_handle tex_handle{hw_resource_manager->Stage_texture_data(texture_data)};
+
+    font_atlas.texture_handle = tex_handle;
+}
+
+std::vector<eruptor::resource::Text_vertex_data> eruptor::resource::Resource_manager::Generate_text_vertices_data(std::string_view text, float start_x, float start_y, Font_handle font_handle, glm::u8vec4 color)
+{
+    auto & font_atlas = fonts_atlases[font_handle.Get_id()];
+
+    std::vector<Text_vertex_data> vertices{};
+    vertices.reserve(text.size() * 6);
+
+    float x = start_x;
+    float y = start_y;
+
+    for(char c : text)
+    {
+        if(c < 32) continue;
+
+        auto it = font_atlas.glyphs.find(c);
+
+        if(it == font_atlas.glyphs.end()) continue;
+
+        const Glyph & glyph = it->second;
+
+        float x_pos = x + glyph.bearing.x;
+        float y_pos = y - glyph.bearing.y;
+
+        float w = glyph.size.x;
+        float h = glyph.size.y;
+
+        float x0 = x_pos;
+        float y0 = y_pos;
+
+        float x1 = x_pos + w;
+        float y1 = y_pos + h;
+
+        float s0 = glyph.uv_min.x;
+        float t0 = glyph.uv_min.y;
+
+        float s1 = glyph.uv_max.x;
+        float t1 = glyph.uv_max.y;
+
+        vertices.push_back({ {x0, y0}, {s0, t0}, color });
+        vertices.push_back({ {x1, y0}, {s1, t0}, color });
+        vertices.push_back({ {x1, y1}, {s1, t1}, color });
+
+        vertices.push_back({ {x0, y0}, {s0, t0}, color });
+        vertices.push_back({ {x1, y1}, {s1, t1}, color });
+        vertices.push_back({ {x0, y1}, {s0, t1}, color });
+
+        x += glyph.advance;
+    }
+
+    return vertices;
 }
 
 eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(const std::filesystem::path & path)
@@ -165,7 +357,7 @@ void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiSce
 
     for(auto i{0u}; i < mesh->mNumVertices; i++)
     {
-        hardware::Vertex vertex{};
+        hardware::Opaque_vertex vertex{};
 
         glm::vec3 vector{};
 
@@ -469,7 +661,7 @@ glm::mat3 eruptor::resource::Resource_manager::Jacobi_eigenvectors(glm::mat3 & c
     return v;
 }
 
-void eruptor::resource::Resource_manager::On_event(const event::Event & event)
+void eruptor::resource::Resource_manager::On_event([[maybe_unused]] const event::Event & event)
 {
 
 }

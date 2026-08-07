@@ -9,11 +9,6 @@ eruptor::physic::Physic_manager::Physic_manager(): event_manager{ event::event_m
 
 void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
 {
-    for(auto & object : scene.render_objects)
-    {
-        object.is_coliding = false;
-    }
-
     can_coliding.clear();
 
     for(auto i{1UZ}; i < scene.render_objects.size(); i++)
@@ -38,9 +33,6 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
     {
         if( std::visit(colision_visitor, scene.render_objects[ can_coliding[i].first ].Get_hitbox(), scene.render_objects[ can_coliding[i].second ].Get_hitbox()) )
         {
-            scene.render_objects[ can_coliding[i].first ].is_coliding = true;
-            scene.render_objects[ can_coliding[i].second ].is_coliding = true;
-
             event::Event::Collision_occurred colision{};
             colision.object_a_id = can_coliding[i].first;
             colision.object_b_id = can_coliding[i].second;
@@ -211,7 +203,6 @@ bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_OBB_test(cons
     glm::vec3 local_b = transform_to_local(cap.end);
 
     glm::vec3 ba = local_b - local_a;
-    float ba_len_sq = glm::dot(ba, ba);
 
     int steps = 10;
     float min_dist_sq = std::numeric_limits<float>::max();
@@ -233,7 +224,7 @@ bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_OBB_test(cons
     return min_dist_sq <= (cap.radius * cap.radius);
 }
 
-void eruptor::physic::Physic_manager::On_event(const event::Event& event)
+void eruptor::physic::Physic_manager::On_event([[maybe_unused]] const event::Event & event)
 {
 
 }

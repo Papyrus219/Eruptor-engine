@@ -10,11 +10,10 @@
 #include <Eruptor/hardware/command_manager.hpp>
 #include <Eruptor/hardware/resources/resource_manager.hpp>
 #include <Eruptor/hardware/resources/push_constants.hpp>
+#include <Eruptor/hardware/constants.hpp>
 
 namespace eruptor::hardware
 {
-
-///@TODO Add missing components and make first demo.
 
 class Hardware
 {
@@ -29,8 +28,6 @@ public:
     Pipelines & Get_pipelines() {return pipelines;}
     Command_manager & Get_command_manager() {return command_manager;}
     Resource_manager & Get_resource_manager() {return resource_manager;}
-
-    static constexpr int MAX_FRAMES_IN_FLIGHT{2};
 private:
     Core core{};
     Device device{};

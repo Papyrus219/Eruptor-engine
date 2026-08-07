@@ -6,6 +6,7 @@
 #include <Eruptor/event/event_listener.hpp>
 #include <Eruptor/renderer/cameras.hpp>
 #include <Eruptor/renderer/render_queue.hpp>
+#include <glm/glm.hpp>
 #include <vector>
 #include <array>
 #include <utility>
@@ -44,6 +45,7 @@ public:
 
     void Stage_scene_render_data(scene::Scene & scene);
     void Stage_object_render_data(scene::Render_object & object);
+    void Stage_text_render_data(std::string_view text, float x, float y, resource::Font_handle font_handle, glm::u8vec4 color);
 
     void Flush_render_buffor();
 

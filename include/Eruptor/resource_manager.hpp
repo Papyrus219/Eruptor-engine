@@ -3,10 +3,13 @@
 
 #include <Eruptor/resource/model.hpp>
 #include <Eruptor/resource/material.hpp>
+#include <Eruptor/resource/text_vertex_data.hpp>
 #include <Eruptor/event/event_listener.hpp>
 #include <Eruptor/physic/hitbox.hpp>
 #include <assimp/material.h>
 #include <glm/glm.hpp>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <filesystem>
 #include <unordered_map>
 
@@ -29,6 +32,32 @@ namespace eruptor::event
 namespace eruptor::resource
 {
 
+struct Glyph
+{
+    glm::ivec2 size{};
+    glm::ivec2 bearing{};
+    uint32_t advance{};
+
+    glm::vec2 uv_min{};
+    glm::vec2 uv_max{};
+};
+
+struct Font_atlas
+{
+    std::filesystem::path path{};
+
+    Status starus{ Status::UNINITIALIZED };
+
+    Texture_handle texture_handle{};
+    float size{};
+
+    int width{512};
+    int height{512};
+
+    std::vector<unsigned char> bitmap{};
+    std::unordered_map<char32_t, Glyph> glyphs{};
+};
+
 enum class Texture_type
 {
     DIFFUSE,
@@ -46,6 +75,14 @@ public:
     physic::AABB Get_model_aabb(Model_handle & model_handle);
     physic::Hitbox Get_model_hitbox(Model_handle & model_handle);
     Material Get_material(Material_handle & material_handle);
+    Font_atlas & Get_font_atlas(Font_handle & font_handle);
+
+    Font_handle Add_font_atlas(const std::filesystem::path & path, float font_size);
+    void Load_font_atlases();
+
+    std::vector<Text_vertex_data> Generate_text_vertices_data(std::string_view text, float start_x, float start_y, Font_handle font_handle, glm::u8vec4 color);
+
+    ///@todo Implenet text functions
 
     void Add_model_alias(uint32_t model_id, const std::string & model_alias);
     std::string_view Get_model_alias(uint32_t model_id);
@@ -57,6 +94,7 @@ public:
 
 private:
     void Load_model(Model & model);
+    void Load_font(Font_atlas & font_atlas);
 
     void Process_node(aiNode * node, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
     void Process_mesh(aiMesh * mesh, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
@@ -77,8 +115,11 @@ private:
     std::vector<Material> materials{};
     std::vector<Texture_handle> textures_handles{};
     std::vector<Mesh_handle> mesh_handles{};
+    std::vector<Font_atlas> fonts_atlases{};
 
     std::unordered_map<uint32_t, std::string> models_aliases{};
+
+    FT_Library free_type{};
 
     event::Event_manager & event_manager;
     hardware::Resource_manager * hw_resource_manager{};

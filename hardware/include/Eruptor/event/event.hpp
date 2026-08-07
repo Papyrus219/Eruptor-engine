@@ -82,7 +82,7 @@ public:
 
     template<typename T>
     requires Is_inner_of<T, Event>
-    [[nodiscard]] const bool Is() const;
+    [[nodiscard]] bool Is() const;
 
     template<typename T>
     requires Is_inner_of<T, Event>
@@ -128,7 +128,7 @@ void Event::operator=(const T && sub_type)
 
 template<typename T>
 requires Is_inner_of<T, Event>
-const bool Event::Is() const
+bool Event::Is() const
 {
     return std::holds_alternative<T>(data);
 }

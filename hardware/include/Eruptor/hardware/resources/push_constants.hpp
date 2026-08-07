@@ -19,6 +19,11 @@ struct Push_constant_debug
     alignas(16) glm::vec3 color{1.0f};
 };
 
+struct Push_constant_text
+{
+    glm::vec2 screen_size{};
+};
+
 }
 
 #endif // ERUPTOR_HARDWARE_PUSH_CONSTANT_HPP

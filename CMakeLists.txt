@@ -7,6 +7,7 @@ find_package(Vulkan REQUIRED)
 find_package(assimp REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(glm REQUIRED)
+find_package(Freetype REQUIRED)
 
 add_subdirectory(hardware/)
 add_subdirectory(physic/)
@@ -31,22 +32,22 @@ set(ENGINE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/eruptor.cpp
 
 Make_library(TARGET eruptor_resource
 SOURCES RESOURCE_SRC
-LIBRARIES_TO_LINK_PUB eruptor_physic
-LIBRARIES_TO_LINK_PRIV eruptor_hardware assimp::assimp eruptor_event
+LIBRARIES_TO_LINK_PUB eruptor_physic Freetype::Freetype
+LIBRARIES_TO_LINK_PRIV eruptor_hardware assimp::assimp eruptor_event project_compiler_warmings
 COMPILATION_FEATURES cxx_std_23)
 
 Make_library(TARGET eruptor_scene
 SOURCES SCENE_SRC
-LIBRARIES_TO_LINK_PRIV eruptor_resource glm::glm eruptor_event
+LIBRARIES_TO_LINK_PRIV eruptor_resource glm::glm eruptor_event project_compiler_warmings
 COMPILATION_FEATURES cxx_std_23)
 
 Make_library(TARGET eruptor_renderer
 SOURCES RENDERER_SRC
-LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_resource eruptor_scene Vulkan::Vulkan eruptor_event
+LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_resource eruptor_scene Vulkan::Vulkan eruptor_event project_compiler_warmings
 COMPILATION_FEATURES cxx_std_23)
 
 Make_library(TARGET eruptor_engine
 SOURCES ENGINE_SRC
-LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_event
+LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_event project_compiler_warmings
 LIBRARIES_TO_LINK_PUB eruptor_resource eruptor_renderer eruptor_physic
 COMPILATION_FEATURES cxx_std_23)
