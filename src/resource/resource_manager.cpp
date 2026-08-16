@@ -81,6 +81,19 @@ eruptor::resource::Font_atlas & eruptor::resource::Resource_manager::Get_font_at
     return fonts_atlases[ font_handle.Get_id() ];
 }
 
+eruptor::resource::Model_handle eruptor::resource::Resource_manager::Get_model_handle(std::string_view model_alias)
+{
+    for(auto & [id, alias] : models_aliases)
+    {
+        if(alias == model_alias)
+        {
+            return Model_handle{id};
+        }
+    }
+
+    throw std::runtime_error{ std::string{"No model with alias: "}.append(model_alias) };
+}
+
 eruptor::resource::Font_handle eruptor::resource::Resource_manager::Add_font_atlas(const std::filesystem::path & path, float font_size)
 {
     for(auto i{0UZ}; i < fonts_atlases.size(); i++)

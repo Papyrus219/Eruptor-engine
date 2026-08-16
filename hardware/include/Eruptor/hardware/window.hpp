@@ -29,9 +29,11 @@ public:
     GLFWwindow * Get_glfw_window() {return window;}
     bool Is_key_pressed(event::Key key);
 
+    ~Window();
 private:
     static void Key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
     static void Mouse_callback(GLFWwindow * window, double x_pos, double y_pos);
+    static void Scroll_callback(GLFWwindow * window, double x_offset, double y_offset);
 
     event::Event_manager & event_manager;
 

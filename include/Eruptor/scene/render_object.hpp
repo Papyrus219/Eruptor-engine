@@ -20,6 +20,8 @@ class Scene_parser;
 
 struct Render_object
 {
+    void Reset();
+
     void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
 
     physic::AABB Get_aabb();
@@ -44,6 +46,7 @@ struct Render_object
     resource::Color color{};
     uint32_t parent_object_index{}; ///NOTE Curently not in use
     bool is_selected{};
+    bool is_active{true};
 
 private:
     void Snap_to_y(float target_y);

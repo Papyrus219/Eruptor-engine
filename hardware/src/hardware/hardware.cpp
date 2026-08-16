@@ -6,7 +6,7 @@ void eruptor::hardware::Hardware::Init()
     using namespace units;
 
     window.Init();
-    window.Create_window( "Test", {800,600} );
+    window.Create_window( "Evolution simulation", {1200,900} );
     core.Init(window.Get_glfw_window());
     device.Init(core);
     swapchain.Init(device, window, core.Get_surface_handle());
@@ -17,4 +17,9 @@ void eruptor::hardware::Hardware::Init()
     resource_manager.Init(device.Get_alocator_handle(), 256_MiB, 256_MiB, 256_MiB, 64_MiB);
 
     pipelines.Init(device, swapchain, uniform_buffers, resource_manager);
+}
+
+void eruptor::hardware::Hardware::Recreate_swapchain()
+{
+    swapchain.Recreate_swap_chain(device, window, core.Get_surface_handle());
 }

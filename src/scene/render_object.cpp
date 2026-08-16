@@ -2,6 +2,14 @@
 #include <Eruptor/resource_manager.hpp>
 #include <numeric>
 
+void eruptor::scene::Render_object::Reset()
+{
+    transformation.Reset();
+
+    is_active = true;
+}
+
+
 void eruptor::scene::Render_object::Set_model(resource::Resource_manager& resource_manager, resource::Model_handle model_handle)
 {
     this->model_handle = model_handle;

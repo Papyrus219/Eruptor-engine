@@ -72,6 +72,7 @@ public:
     void Init(hardware::Resource_manager & hw_resource_manager);
 
     Model & Get_model(Model_handle & model_handle);
+    Model_handle Get_model_handle(std::string_view model_alias);
     physic::AABB Get_model_aabb(Model_handle & model_handle);
     physic::Hitbox Get_model_hitbox(Model_handle & model_handle);
     Material Get_material(Material_handle & material_handle);

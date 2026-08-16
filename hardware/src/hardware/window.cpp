@@ -25,6 +25,7 @@ void eruptor::hardware::Window::Create_window(std::string_view title, glm::uvec2
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, Window::Key_callback);
     glfwSetCursorPosCallback(window, Window::Mouse_callback);
+    glfwSetScrollCallback(window, Window::Scroll_callback);
 }
 
 void eruptor::hardware::Window::Update()
@@ -57,7 +58,7 @@ case glfw_key:                                   \
     break;
 
 
-void eruptor::hardware::Window::Key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void eruptor::hardware::Window::Key_callback([[maybe_unused]] GLFWwindow* window, int key, [[maybe_unused]] int scancode, int action, [[maybe_unused]] int mods)
 {
     const bool pressed = action != GLFW_RELEASE;
 
@@ -207,7 +208,7 @@ void eruptor::hardware::Window::Key_callback(GLFWwindow* window, int key, int sc
 }
 
 
-void eruptor::hardware::Window::Mouse_callback(GLFWwindow* window, double x_pos, double y_pos)
+void eruptor::hardware::Window::Mouse_callback([[maybe_unused]] GLFWwindow* window, double x_pos, double y_pos)
 {
     static float last_x{}, last_y{};
 
@@ -222,6 +223,17 @@ void eruptor::hardware::Window::Mouse_callback(GLFWwindow* window, double x_pos,
 
     last_x = x_pos;
     last_y = y_pos;
+}
+
+void eruptor::hardware::Window::Scroll_callback([[maybe_unused]] GLFWwindow* window, [[maybe_unused]] double x_offset, double y_offset)
+{
+    event::Event::Mouse_scroll mouse_scroll{};
+    mouse_scroll.y_offset = y_offset;
+
+    event::Event event{};
+    event = mouse_scroll;
+
+    event::event_manager.Announce_event( event );
 }
 
 bool eruptor::hardware::Window::Is_key_pressed(event::Key key)
@@ -360,5 +372,10 @@ bool eruptor::hardware::Window::Is_key_pressed(event::Key key)
     }
 }
 
+eruptor::hardware::Window::~Window()
+{
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
 
 #undef HANDLE_KEY

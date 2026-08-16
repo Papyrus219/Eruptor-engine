@@ -62,6 +62,8 @@ void eruptor::renderer::Renderer::Stage_scene_render_data(scene::Scene & scene)
 
 void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object & object)
 {
+    if(!object.is_active) return;
+
     auto model_handle = object.Get_model_handle();
     auto model_data = rs_resource_manager->Get_model( model_handle );
 
@@ -132,11 +134,24 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     {
         throw std::runtime_error("failed to wait for fence!");
     }
-    device.Get_device_handle().resetFences(*frame_syncs[current_frame].in_flight_fences);
 
     auto & command_buffor = command_manager.Begin_graphic_command_record(current_frame);
     auto [result, image_index] = swap_chain.Get_swapchain_handle().acquireNextImage(UINT64_MAX, *frame_syncs[current_frame].present_complete, nullptr);
-
+    if(result == vk::Result::eErrorOutOfDateKHR)
+    {
+        hardware->Recreate_swapchain();
+        return;
+    }
+    if(result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
+    {
+        assert(result == vk::Result::eTimeout || result == vk::Result::eNotReady);
+        throw std::runtime_error{"failed to acquire swap chain image!"};
+    }
+    else
+    {
+        assert(result == vk::Result::eSuccess);
+    }
+    device.Get_device_handle().resetFences(*frame_syncs[current_frame].in_flight_fences);
 
     hardware::utilities::Transition_image_layout(
         command_buffor,
@@ -260,6 +275,15 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     presentInfoKHR.setImageIndices( image_index );
 
     auto result_2 = device.queues.Get_graphics_queue_handle().presentKHR(presentInfoKHR);
+    if((result_2 == vk::Result::eSuboptimalKHR) || (result_2 == vk::Result::eErrorOutOfDateKHR))
+    {
+        hardware->Recreate_swapchain();
+    }
+    else
+    {
+        assert(result_2 == vk::Result::eSuccess);
+    }
+
     switch (result_2)
     {
         case vk::Result::eSuccess:

@@ -19,6 +19,7 @@ class Hardware
 {
 public:
     void Init();
+    void Recreate_swapchain();
 
     Core & Get_core() {return core;}
     Window & Get_window() {return window;}

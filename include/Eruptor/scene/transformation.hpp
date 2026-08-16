@@ -10,6 +10,15 @@ namespace eruptor::scene
 class Transformation
 {
 public:
+    void Reset()
+    {
+        position = {};
+        rotation = glm::identity<glm::quat>();
+        scale = glm::vec3{1.0f};
+
+        has_changed = true;
+    }
+
     [[nodiscard]] const glm::mat4x4 & Get_model_matrix();
 
     [[nodiscard]] glm::vec3 Get_position() const { return position; }

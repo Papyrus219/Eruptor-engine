@@ -18,6 +18,8 @@ class Swapchain
 public:
     void Init(Device & device, Window & window, const vk::raii::SurfaceKHR & surface);
 
+    void Recreate_swap_chain(Device & device, Window & window, const vk::raii::SurfaceKHR & surface);
+
     const vk::raii::SwapchainKHR & Get_swapchain_handle() const {return swap_chain;}
     const vk::SurfaceFormatKHR & Get_surface_format() const {return swap_chain_surface_format;}
     const vk::Extent2D & Get_extent() const {return swap_chain_extent;}
@@ -32,10 +34,13 @@ public:
 
     vk::Format Find_depth_format(Device & device);
 
+    ~Swapchain();
 private:
     void Create_swap_chain(Device & device, Window & window, const vk::raii::SurfaceKHR & surface);
     void Create_image_views(Device & device);
     void Create_depth_resources(Device & device);
+
+    void Cleanup_swap_chain();
 
     vk::SurfaceFormatKHR Choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR> & avalible_formats);
     vk::PresentModeKHR Choose_swap_present_mode(const std::vector<vk::PresentModeKHR> & avalible_present_modes);

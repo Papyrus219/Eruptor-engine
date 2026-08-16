@@ -13,7 +13,15 @@ void eruptor::hardware::Swapchain::Init(Device & device, Window & window, const 
     Create_depth_resources(device);
 }
 
-void eruptor::hardware::Swapchain::Create_swap_chain(Device& device, Window& window, const vk::raii::SurfaceKHR & surface)
+void eruptor::hardware::Swapchain::Recreate_swap_chain(Device & device, Window & window, const vk::raii::SurfaceKHR & surface)
+{
+    device.Get_device_handle().waitIdle();
+
+    Create_swap_chain(device, window, surface);
+    Create_image_views(device);
+}
+
+void eruptor::hardware::Swapchain::Create_swap_chain(Device & device, Window & window, const vk::raii::SurfaceKHR & surface)
 {
     vk::SurfaceCapabilitiesKHR surface_capabilities = device.Get_surface_capabilities( surface );
     swap_chain_extent = Choose_swap_extent(window, surface_capabilities);
@@ -75,6 +83,12 @@ vk::SurfaceFormatKHR eruptor::hardware::Swapchain::Choose_swap_surface_format(co
     return format_it != avalible_formats.end() ? *format_it : avalible_formats[0];
 }
 
+void eruptor::hardware::Swapchain::Cleanup_swap_chain()
+{
+    swap_chain_image_views.clear();
+    swap_chain = nullptr;
+}
+
 vk::PresentModeKHR eruptor::hardware::Swapchain::Choose_swap_present_mode(const std::vector<vk::PresentModeKHR>& avalible_present_modes)
 {
     assert(std::ranges::any_of(avalible_present_modes, [](auto present_mode) {return present_mode == vk::PresentModeKHR::eFifo;}));
@@ -121,3 +135,7 @@ vk::Format eruptor::hardware::Swapchain::Find_depth_format(Device & device)
     );
 }
 
+eruptor::hardware::Swapchain::~Swapchain()
+{
+    Cleanup_swap_chain();
+}
