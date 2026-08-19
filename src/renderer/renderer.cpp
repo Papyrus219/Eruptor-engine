@@ -16,6 +16,11 @@ bool render_debug_enabled = true;
 constexpr bool DEBUG_RENDER = false;
 #endif
 
+namespace
+{
+    eruptor::hardware::Uniform_buffer_light uniform_light{};
+}
+
 struct eruptor::renderer::Frame_sync
 {
     vk::raii::Semaphore present_complete = nullptr;
@@ -36,10 +41,20 @@ void eruptor::renderer::Renderer::Init(hardware::Hardware & hardware, resource::
 
     auto & device = this->hardware->Get_device();
 
+    hardware::Direction_caster dir_caster{};
+
+    dir_caster.ambient = resource::Color{50, 50, 50};
+    dir_caster.diffuse = resource::Color{200, 200, 200};
+    dir_caster.specular = resource::Color{255, 255, 255};
+    dir_caster.dirr = {-0.2, -1.0, -0.3, 0.0};
+
+    uniform_light.light_direction = dir_caster;
+    //uniform_light.active_point_lights_count = 0;
+
     vk::FenceCreateInfo fence_info{};
     fence_info.flags = vk::FenceCreateFlagBits::eSignaled;
 
-    uint32_t image_count = this->hardware->Get_swapchain().Get_image_count(); // patrz punkt 3 niżej
+    uint32_t image_count = this->hardware->Get_swapchain().Get_image_count();
 
     for(uint32_t i{}; i < image_count; i++)
     {
@@ -96,7 +111,7 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
 
             auto aabb = object.Get_aabb();
 
-            push_constant_debug.color = object.is_selected ?  glm::vec3{1.0f, 0.0f, 0.0f} : glm::vec3{0.0f, 0.0f, 1.0f};
+            push_constant_debug.color = object.is_selected ?  glm::vec4{1.0f, 0.0f, 0.0f, 1.0f} : glm::vec4{0.0f, 0.0f, 1.0f, 1.0f};
             push_constant_debug.min = aabb.min;
             push_constant_debug.max = aabb.max;
 
@@ -153,6 +168,9 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     }
     device.Get_device_handle().resetFences(*frame_syncs[current_frame].in_flight_fences);
 
+
+    hardware->Get_uniform_buffers().Upload_light_data(uniform_light, current_frame);
+
     hardware::utilities::Transition_image_layout(
         command_buffor,
         swap_chain.Get_image(image_index),
@@ -204,8 +222,34 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
 
     command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::OPAQUE));
 
+    std::cout
+    << "dir: "
+    << uniform_light.light_direction.dirr.x << ' '
+    << uniform_light.light_direction.dirr.y << ' '
+    << uniform_light.light_direction.dirr.z << '\n';
+
+    std::cout
+    << "ambient: "
+    << uniform_light.light_direction.ambient.x << ' '
+    << uniform_light.light_direction.ambient.y << ' '
+    << uniform_light.light_direction.ambient.z << '\n';
+
+    std::cout
+    << "diffuse: "
+    << uniform_light.light_direction.diffuse.x << ' '
+    << uniform_light.light_direction.diffuse.y << ' '
+    << uniform_light.light_direction.diffuse.z << '\n';
+
+    std::cout
+    << "specular: "
+    << uniform_light.light_direction.specular.x << ' '
+    << uniform_light.light_direction.specular.y << ' '
+    << uniform_light.light_direction.specular.z << '\n';
+
     hw_resource_manager->Bind_geometry_buffer( command_buffor );
-    hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::OPAQUE, fly_camera.Get_view_matrix());
+
+    hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::OPAQUE, fly_camera.Get_view_matrix(), fly_camera.Get_position());
+    hardware->Get_uniform_buffers().Bind_light_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::OPAQUE);
 
     for(auto & render_request : render_queue.opaque_queue)
     {
@@ -213,7 +257,7 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
         auto material = rs_resource_manager->Get_material( mat_handle );
         auto diffuse_texture = material.diffuse_texture_handle;
 
-        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), 1, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
+        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), 2, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
         command_buffor.pushConstants<hardware::Push_constant_opaque>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
 
         command_buffor.drawIndexed(render_request.indices_amount, 1, render_request.indices_offset, render_request.vertex_offset, 0);
@@ -225,7 +269,7 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
         {
             command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::DEBUG));
 
-            hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::DEBUG, fly_camera.Get_view_matrix());
+            hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::DEBUG, fly_camera.Get_view_matrix(), fly_camera.Get_position());
             for(auto & render_request : render_queue.debug_queue)
             {
                 command_buffor.pushConstants<hardware::Push_constant_debug>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::DEBUG), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );

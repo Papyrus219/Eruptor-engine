@@ -4,12 +4,20 @@
 #include <Eruptor/hardware/utility_structures.hpp>
 #include <map>
 #include <set>
+#include <iostream>
 
 void eruptor::hardware::Device::Init(Core & core)
 {
     Pick_physical_device(core);
     Create_logical_device(core);
     Create_alocator(core);
+
+    auto properties = physical_device.getProperties();
+
+    std::cout
+    << "Max push constants size: "
+    << properties.limits.maxPushConstantsSize
+    << '\n';
 }
 
 vma::raii::Image eruptor::hardware::Device::Create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)

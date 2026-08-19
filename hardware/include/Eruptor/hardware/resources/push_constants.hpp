@@ -16,7 +16,7 @@ struct Push_constant_debug
 {
     alignas(16) glm::vec3 min{};
     alignas(16) glm::vec3 max{};
-    alignas(16) glm::vec3 color{1.0f};
+    alignas(16) glm::vec4 color{1.0f};
 };
 
 struct Push_constant_text

@@ -20,7 +20,6 @@ target_compile_options(project_compiler_warmings INTERFACE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra>
 )
 
-
 set(HARDWARE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/hardware/hardware.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/core.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/hardware/device.cpp
@@ -52,10 +51,11 @@ LIBRARIES_TO_LINK_PUB Vulkan::Vulkan glm::glm glfw VulkanMemoryAllocator-Hpp::Vu
 LIBRARIES_TO_LINK_PRIV eruptor_event project_compiler_warmings
 COMPILATION_FEATURES cxx_std_23)
 
-add_dependencies(eruptor_hardware opaque_shader debug_shader text_shader)
+add_dependencies(eruptor_hardware opaque_shader debug_shader text_shader light_source_shader)
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR})
 target_include_directories(eruptor_hardware PUBLIC ${vmahpp_SOURCE_DIR}/include)
 
 add_slang_shader_target(opaque_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/opaque.slang)
 add_slang_shader_target(debug_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/debug.slang)
 add_slang_shader_target(text_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/text.slang)
+add_slang_shader_target(light_source_shader SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders_src/light_source.slang)
