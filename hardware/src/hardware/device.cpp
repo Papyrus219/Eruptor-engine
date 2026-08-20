@@ -115,7 +115,15 @@ void eruptor::hardware::Device::Pick_physical_device(Core & core)
 
         if(device_properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
         {
+            score += 2000;
+        }
+        else if(device_properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
+        {
             score += 1000;
+        }
+        else if(device_properties.deviceType == vk::PhysicalDeviceType::eCpu)
+        {
+            score += 0;
         }
 
         score += device_properties.limits.maxImageDimension2D;

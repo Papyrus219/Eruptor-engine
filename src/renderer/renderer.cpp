@@ -14,6 +14,7 @@ constexpr bool DEBUG_RENDER = true;
 bool render_debug_enabled = true;
 #else
 constexpr bool DEBUG_RENDER = false;
+bool render_debug_enabled = false;
 #endif
 
 namespace
