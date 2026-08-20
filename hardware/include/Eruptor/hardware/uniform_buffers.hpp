@@ -26,8 +26,8 @@ struct Uniform_buffer_vp
 struct Uniform_buffer_light
 {
     Direction_caster light_direction{};
-   //Point_caster point_lights[16];
-    //uint32_t active_point_lights_count{};
+    Point_caster point_lights[16];
+    uint32_t active_point_lights_count{};
 };
 
 class Uniform_buffers

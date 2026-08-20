@@ -44,7 +44,7 @@ VertexOutput Vert_main(VSInput input)
     return output;
 }
 
-[[vk::binding(0, 2)]]
+[[vk::binding(0, 1)]]
 Sampler2D diffuse_texture;
 
 [shader("fragment")]

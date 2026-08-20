@@ -9,6 +9,7 @@ namespace eruptor::hardware
 enum class Pipeline_id: uint8_t
 {
     OPAQUE,
+    LIGHT_SOURCE,
     DEBUG,
     TEXT,
     COUNT

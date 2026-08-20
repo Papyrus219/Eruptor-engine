@@ -12,6 +12,12 @@ struct Push_constant_opaque
     glm::vec4 color{};
 };
 
+struct Push_constant_light_source
+{
+    glm::mat4x4 model{1.0f};
+    glm::vec4 color{};
+};
+
 struct Push_constant_debug
 {
     alignas(16) glm::vec3 min{};

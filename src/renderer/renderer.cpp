@@ -43,13 +43,13 @@ void eruptor::renderer::Renderer::Init(hardware::Hardware & hardware, resource::
 
     hardware::Direction_caster dir_caster{};
 
-    dir_caster.ambient = resource::Color{50, 50, 50};
-    dir_caster.diffuse = resource::Color{200, 200, 200};
-    dir_caster.specular = resource::Color{255, 255, 255};
+    //dir_caster.ambient = resource::Color{50, 50, 50};
+    //dir_caster.diffuse = resource::Color{200, 200, 200};
+    //dir_caster.specular = resource::Color{255, 255, 255};
     dir_caster.dirr = {-0.2, -1.0, -0.3, 0.0};
 
     uniform_light.light_direction = dir_caster;
-    //uniform_light.active_point_lights_count = 0;
+    uniform_light.active_point_lights_count = 0;
 
     vk::FenceCreateInfo fence_info{};
     fence_info.flags = vk::FenceCreateFlagBits::eSignaled;
@@ -69,6 +69,8 @@ void eruptor::renderer::Renderer::Init(hardware::Hardware & hardware, resource::
 
 void eruptor::renderer::Renderer::Stage_scene_render_data(scene::Scene & scene)
 {
+    uniform_light.active_point_lights_count = 0;
+
     for(uint32_t i{1}; i < scene.render_objects.size(); i++)
     {
         Stage_object_render_data( scene.render_objects[i] );
@@ -84,22 +86,55 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
 
     assert(model_data.status == resource::Status::LODADED);
 
-    Render_request<hardware::Push_constant_opaque> opaque_request{};
-    hardware::Push_constant_opaque push_constant_opaque{};
-    push_constant_opaque.model = object.Get_model_matrix();
-    push_constant_opaque.color = object.color;
-
-    for(auto mesh_handle : model_data.Meshes_handles)
+    if(object.shading_type == scene::Shading_type::OPAQUE)
     {
-        auto mesh = hw_resource_manager->Get_mesh( mesh_handle );
+        Render_request<hardware::Push_constant_opaque> opaque_request{};
+        hardware::Push_constant_opaque push_constant_opaque{};
+        push_constant_opaque.model = object.Get_model_matrix();
+        push_constant_opaque.color = object.color;
 
-        opaque_request.vertex_offset = mesh.vertex_offset;
-        opaque_request.indices_offset = mesh.indices_offset;
-        opaque_request.indices_amount = mesh.indices_amount;
-        opaque_request.material_id = mesh.material_id;
-        opaque_request.push_constant = push_constant_opaque;
+        for(auto mesh_handle : model_data.Meshes_handles)
+        {
+            auto mesh = hw_resource_manager->Get_mesh( mesh_handle );
 
-        render_queue.opaque_queue.push_back( opaque_request );
+            opaque_request.vertex_offset = mesh.vertex_offset;
+            opaque_request.indices_offset = mesh.indices_offset;
+            opaque_request.indices_amount = mesh.indices_amount;
+            opaque_request.material_id = mesh.material_id;
+            opaque_request.push_constant = push_constant_opaque;
+
+            render_queue.opaque_queue.push_back( opaque_request );
+        }
+    }
+    else if(object.shading_type == scene::Shading_type::LIGHT_CASTER)
+    {
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].pos = object.Get_position();
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].ambient = glm::vec3(object.color) * 0.3f;
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].diffuse = object.color;
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].specular = object.color;
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].constant = 1.0;
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].linear = 0.07;
+        uniform_light.point_lights[ uniform_light.active_point_lights_count ].quadratic = 0.017;
+
+        uniform_light.active_point_lights_count++;
+
+        Render_request<hardware::Push_constant_light_source> light_source_request{};
+        hardware::Push_constant_light_source push_constant_light_source{};
+        push_constant_light_source.model = object.Get_model_matrix();
+        push_constant_light_source.color = object.color;
+
+        for(auto mesh_handle : model_data.Meshes_handles)
+        {
+            auto mesh = hw_resource_manager->Get_mesh( mesh_handle );
+
+            light_source_request.vertex_offset = mesh.vertex_offset;
+            light_source_request.indices_offset = mesh.indices_offset;
+            light_source_request.indices_amount = mesh.indices_amount;
+            light_source_request.material_id = mesh.material_id;
+            light_source_request.push_constant = push_constant_light_source;
+
+            render_queue.light_source_queue.push_back( light_source_request );
+        }
     }
 
     if constexpr(DEBUG_RENDER)
@@ -222,29 +257,6 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
 
     command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::OPAQUE));
 
-    std::cout
-    << "dir: "
-    << uniform_light.light_direction.dirr.x << ' '
-    << uniform_light.light_direction.dirr.y << ' '
-    << uniform_light.light_direction.dirr.z << '\n';
-
-    std::cout
-    << "ambient: "
-    << uniform_light.light_direction.ambient.x << ' '
-    << uniform_light.light_direction.ambient.y << ' '
-    << uniform_light.light_direction.ambient.z << '\n';
-
-    std::cout
-    << "diffuse: "
-    << uniform_light.light_direction.diffuse.x << ' '
-    << uniform_light.light_direction.diffuse.y << ' '
-    << uniform_light.light_direction.diffuse.z << '\n';
-
-    std::cout
-    << "specular: "
-    << uniform_light.light_direction.specular.x << ' '
-    << uniform_light.light_direction.specular.y << ' '
-    << uniform_light.light_direction.specular.z << '\n';
 
     hw_resource_manager->Bind_geometry_buffer( command_buffor );
 
@@ -259,6 +271,22 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
 
         command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), 2, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
         command_buffor.pushConstants<hardware::Push_constant_opaque>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
+
+        command_buffor.drawIndexed(render_request.indices_amount, 1, render_request.indices_offset, render_request.vertex_offset, 0);
+    }
+
+
+    command_buffor.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines.Get_pipeline_handle(hardware::Pipeline_id::LIGHT_SOURCE));
+    hardware->Get_uniform_buffers().Bind_vp_buffer(command_buffor, current_frame, pipelines, hardware::Pipeline_id::LIGHT_SOURCE, fly_camera.Get_view_matrix(), fly_camera.Get_position());
+
+    for(auto & render_request : render_queue.light_source_queue)
+    {
+        resource::Material_handle mat_handle{render_request.material_id};
+        auto material = rs_resource_manager->Get_material( mat_handle );
+        auto diffuse_texture = material.diffuse_texture_handle;
+
+        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::LIGHT_SOURCE), 1, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
+        command_buffor.pushConstants<hardware::Push_constant_light_source>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::LIGHT_SOURCE), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
 
         command_buffor.drawIndexed(render_request.indices_amount, 1, render_request.indices_offset, render_request.vertex_offset, 0);
     }
@@ -341,6 +369,7 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     current_frame = (current_frame + 1) % static_cast<uint32_t>(hardware::MAX_FRAMES_IN_FLIGHT);
 
     render_queue.opaque_queue.clear();
+    render_queue.light_source_queue.clear();
     render_queue.debug_queue.clear();
     render_queue.text_queue.clear();
 }

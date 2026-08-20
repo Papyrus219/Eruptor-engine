@@ -16,6 +16,12 @@ namespace eruptor::resource
 namespace eruptor::scene
 {
 
+enum class Shading_type: uint8_t
+{
+    OPAQUE,
+    LIGHT_CASTER
+};
+
 class Scene_parser;
 
 struct Render_object
@@ -45,6 +51,7 @@ struct Render_object
 
     resource::Color color{};
     uint32_t parent_object_index{}; ///NOTE Curently not in use
+    Shading_type shading_type{};
     bool is_selected{};
     bool is_active{true};
 
