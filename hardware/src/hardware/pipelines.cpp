@@ -109,7 +109,7 @@ void eruptor::hardware::Pipelines::Create_graphics_pipelines(Device& device, Swa
 
 void eruptor::hardware::Pipelines::Create_opaque_pipeline(Device & device, Swapchain & swapchain, Uniform_buffers & uniforms_buffers, Resource_manager & resource_manager, vk::PipelineDynamicStateCreateInfo dynamic_state_info, vk::PipelineInputAssemblyStateCreateInfo input_assembly, vk::PipelineRasterizationStateCreateInfo rasterizer, vk::PipelineDepthStencilStateCreateInfo depth_stencil, vk::PipelineMultisampleStateCreateInfo multisampling, vk::PipelineViewportStateCreateInfo viewport_state, vk::PipelineColorBlendStateCreateInfo color_blending, vk::Format depth_format)
 {
-    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/opaque_shader.spv"));
+    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./_deps/engine-build/hardware/shaders/opaque_shader.spv"));
 
     vk::PipelineShaderStageCreateInfo vertex_shader_stage_info{};
     vertex_shader_stage_info.setStage( vk::ShaderStageFlagBits::eVertex );
@@ -169,7 +169,7 @@ void eruptor::hardware::Pipelines::Create_opaque_pipeline(Device & device, Swapc
 
 void eruptor::hardware::Pipelines::Create_light_source_pipeline(Device & device, Swapchain & swapchain, Uniform_buffers & uniforms_buffers, Resource_manager & resource_manager, vk::PipelineDynamicStateCreateInfo dynamic_state_info, vk::PipelineInputAssemblyStateCreateInfo input_assembly, vk::PipelineRasterizationStateCreateInfo rasterizer, vk::PipelineDepthStencilStateCreateInfo depth_stencil, vk::PipelineMultisampleStateCreateInfo multisampling, vk::PipelineViewportStateCreateInfo viewport_state, vk::PipelineColorBlendStateCreateInfo color_blending, vk::Format depth_format)
 {
-    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/light_source_shader.spv"));
+    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./_deps/engine-build/hardware/shaders/light_source_shader.spv"));
 
     vk::PipelineShaderStageCreateInfo vertex_shader_stage_info{};
     vertex_shader_stage_info.setStage( vk::ShaderStageFlagBits::eVertex );
@@ -229,7 +229,7 @@ void eruptor::hardware::Pipelines::Create_light_source_pipeline(Device & device,
 
 void eruptor::hardware::Pipelines::Create_debug_pipeline(Device & device, Swapchain & swapchain, Uniform_buffers & uniforms_buffers, vk::PipelineDynamicStateCreateInfo dynamic_state_info, vk::PipelineInputAssemblyStateCreateInfo input_assembly, vk::PipelineRasterizationStateCreateInfo rasterizer, vk::PipelineDepthStencilStateCreateInfo depth_stencil, vk::PipelineMultisampleStateCreateInfo multisampling, vk::PipelineViewportStateCreateInfo viewport_state, vk::PipelineColorBlendStateCreateInfo color_blending, vk::Format depth_format)
 {
-    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/debug_shader.spv"));
+    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./_deps/engine-build/hardware/shaders/debug_shader.spv"));
 
     vk::PipelineShaderStageCreateInfo vertex_shader_stage_info{};
     vertex_shader_stage_info.setStage( vk::ShaderStageFlagBits::eVertex );
@@ -283,7 +283,7 @@ void eruptor::hardware::Pipelines::Create_debug_pipeline(Device & device, Swapch
 
 void eruptor::hardware::Pipelines::Create_text_pipeline(Device & device, Swapchain & swapchain, Resource_manager & resource_manager, vk::PipelineDynamicStateCreateInfo dynamic_state_info, vk::PipelineInputAssemblyStateCreateInfo input_assembly, vk::PipelineRasterizationStateCreateInfo rasterizer, vk::PipelineDepthStencilStateCreateInfo depth_stencil, vk::PipelineMultisampleStateCreateInfo multisampling, vk::PipelineViewportStateCreateInfo viewport_state, vk::PipelineColorBlendStateCreateInfo color_blending, vk::Format depth_format)
 {
-    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./engine/hardware/shaders/text_shader.spv"));
+    vk::raii::ShaderModule shader_module = Create_shader_module(device, Read_file("./_deps/engine-build/hardware/shaders/text_shader.spv"));
 
     vk::PipelineShaderStageCreateInfo vertex_shader_stage_info{};
     vertex_shader_stage_info.setStage( vk::ShaderStageFlagBits::eVertex );
