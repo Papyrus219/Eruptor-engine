@@ -20,6 +20,7 @@ class Command_manager;
 class Device;
 struct Mesh_data;
 struct Texture_data;
+struct Cubemap_data;
 
 class Resource_manager
 {
@@ -38,6 +39,7 @@ public:
 
     uint32_t Stage_mesh_data(Mesh_data & mesh_data);
     uint32_t Stage_texture_data(Texture_data & texture_data);
+    uint32_t Stage_cubemap_data(Cubemap_data & cubemap_data);
 
     void Start_staging_text(uint32_t current_frame);
     uint32_t Stage_text_data(const std::vector<Text_vertex> & vertices, uint32_t current_frame);
@@ -120,6 +122,15 @@ struct Texture_data
     int height{};
     int tex_chanels{};
     unsigned char * pixels{};
+    vk::Format format{};
+};
+
+struct Cubemap_data
+{
+    int width{};
+    int height{};
+    int tex_chanels{};
+    unsigned char * pixels[6]{};
     vk::Format format{};
 };
 

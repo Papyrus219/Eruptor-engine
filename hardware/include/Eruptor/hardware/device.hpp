@@ -20,8 +20,8 @@ public:
     const vk::raii::PhysicalDevice & Get_physical_device_handle() {return physical_device;}
     vma::raii::Allocator & Get_alocator_handle() {return alocator;}
 
-    vma::raii::Image Create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties);
-    vk::raii::ImageView Create_image_view(vk::Image const & image, vk::Format format, vk::ImageAspectFlags aspect_flags);
+    vma::raii::Image Create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageCreateFlags create_flags, uint8_t layer_count = 1);
+    vk::raii::ImageView Create_image_view(vk::Image const & image, vk::Format format, vk::ImageAspectFlags aspect_flags, vk::ImageViewType view_type, uint8_t layer_count = 1);
 
     bool Get_is_one_queue_family();
 

@@ -172,22 +172,53 @@ uint32_t eruptor::hardware::Resource_manager::Stage_texture_data(Texture_data & 
 
     if(curr_stage_texture_offset + alligned_size > max_texture_buffor_size)
     {
-        throw std::runtime_error{"ERROR::RESOURCE_MANAGER::Texture stage buffer overflow."};
+        throw std::runtime_error{"ERROR::RESOURCE_MANAGER::Texture stage buffer overflow (2D texture)."};
     }
 
     memcpy(reinterpret_cast<char *>(texture_stage_mapped_memory) + curr_stage_texture_offset, texture_data.pixels, image_size);
 
     Texture tmp_tex{};
-    tmp_tex.Init(*device, texture_data.width, texture_data.height, texture_data.format, curr_stage_texture_offset);
+    tmp_tex.Init(*device, texture_data.width, texture_data.height, texture_data.format, curr_stage_texture_offset, Texture_type::TYPE_2D, 1);
     tmp_tex.Create_descriptor_set(*device, texture_descriptor_pool, texture_set_layout, texture_sampler);
     tmp_tex.offset_in_stage_buffer = curr_stage_texture_offset;
     tmp_tex.image_size = image_size;
     tmp_tex.width = texture_data.width;
     tmp_tex.height = texture_data.height;
+    tmp_tex.layer_count = 1;
 
     textures.push_back( std::move(tmp_tex) );
 
     curr_stage_texture_offset += alligned_size;
+
+    return textures.size() - 1;
+}
+
+uint32_t eruptor::hardware::Resource_manager::Stage_cubemap_data(Cubemap_data & cubemap_data)
+{
+    vk::DeviceSize face_size = cubemap_data.width * cubemap_data.height * cubemap_data.tex_chanels;
+    vk::DeviceSize cubemap_size = face_size * 6;
+
+    Texture tmp_tex{};
+    tmp_tex.Init(*device, cubemap_data.width, cubemap_data.height, cubemap_data.format, curr_stage_texture_offset, Texture_type::TYPE_CUBE, 6);
+    tmp_tex.offset_in_stage_buffer = curr_stage_texture_offset;
+    tmp_tex.image_size = cubemap_size;
+    tmp_tex.width = cubemap_data.width;
+    tmp_tex.height = cubemap_data.height;
+    tmp_tex.layer_count = 6;
+
+    textures.push_back( std::move(tmp_tex) );
+
+    if(curr_stage_texture_offset + cubemap_size > max_text_buffor_size)
+    {
+        throw std::runtime_error{"ERROR::RESOURCE_MANAGER::Texture stage buffer overflow (Cube map)."};
+    }
+
+    for(auto i{0UZ}; i < 6; i++)
+    {
+        memcpy(reinterpret_cast<char *>(texture_stage_mapped_memory) + curr_stage_texture_offset, cubemap_data.pixels[i], face_size);
+
+        curr_stage_texture_offset += face_size;
+    }
 
     return textures.size() - 1;
 }
@@ -259,6 +290,7 @@ void eruptor::hardware::Resource_manager::Upload_data_to_GPU()
         for(auto i = uploded_textures_count; i < textures.size(); i++)
         {
             tmp_barrier.image = textures[i].texture_image;
+            tmp_barrier.subresourceRange.layerCount = textures[i].layer_count;
             transpose_bariers.push_back( tmp_barrier );
         }
 
@@ -279,6 +311,7 @@ void eruptor::hardware::Resource_manager::Upload_data_to_GPU()
             auto & tex = textures[i];
             region.bufferOffset = tex.offset_in_stage_buffer;
             region.imageExtent = vk::Extent3D{tex.width, tex.height, 1};
+            region.imageSubresource.layerCount = tex.layer_count;
 
             transpose_command_buffer.copyBufferToImage(texture_stage_buffer, tex.texture_image, vk::ImageLayout::eTransferDstOptimal, region);
         }
@@ -293,6 +326,7 @@ void eruptor::hardware::Resource_manager::Upload_data_to_GPU()
             for(size_t i = uploded_textures_count; i < textures.size(); ++i)
             {
                 tmp_barrier.image = textures[i].texture_image;
+                tmp_barrier.subresourceRange.layerCount = textures[i].layer_count;
                 transpose_bariers.push_back( tmp_barrier );
             }
             transpose_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, transpose_bariers);
@@ -312,6 +346,7 @@ void eruptor::hardware::Resource_manager::Upload_data_to_GPU()
             for(size_t i = uploded_textures_count; i < textures.size(); ++i)
             {
                 tmp_barrier.image = textures[i].texture_image;
+                tmp_barrier.subresourceRange.layerCount = textures[i].layer_count;
                 transpose_bariers.push_back( tmp_barrier );
             }
             transpose_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe, {}, nullptr, nullptr, transpose_bariers);
@@ -333,6 +368,7 @@ void eruptor::hardware::Resource_manager::Upload_data_to_GPU()
             for(size_t i = uploded_textures_count; i < textures.size(); ++i)
             {
                 tmp_barrier.image = textures[i].texture_image;
+                tmp_barrier.subresourceRange.layerCount = textures[i].layer_count;
                 transpose_bariers.push_back( tmp_barrier );
             }
             graphic_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader, {}, nullptr, nullptr, transpose_bariers);
@@ -441,10 +477,5 @@ void eruptor::hardware::Mesh_data::Clear()
     vertecies.clear();
     indices.clear();
 }
-
-
-
-
-
 
 

@@ -20,14 +20,15 @@ void eruptor::hardware::Device::Init(Core & core)
     << '\n';
 }
 
-vma::raii::Image eruptor::hardware::Device::Create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
+vma::raii::Image eruptor::hardware::Device::Create_image(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::ImageCreateFlags create_flags , uint8_t layer_count)
 {
     vk::ImageCreateInfo image_info{};
     image_info.imageType = vk::ImageType::e2D;
     image_info.format = format;
+    image_info.flags = create_flags;
     image_info.extent = vk::Extent3D{width, height, 1};
     image_info.mipLevels = 1;
-    image_info.arrayLayers = 1;
+    image_info.arrayLayers = layer_count;
     image_info.samples = vk::SampleCountFlagBits::e1;
     image_info.tiling = tiling;
     image_info.usage = usage;
@@ -39,18 +40,18 @@ vma::raii::Image eruptor::hardware::Device::Create_image(uint32_t width, uint32_
     return alocator.createImage(image_info, alloc_info);
 }
 
-vk::raii::ImageView eruptor::hardware::Device::Create_image_view(const vk::Image& image, vk::Format format, vk::ImageAspectFlags aspect_flags)
+vk::raii::ImageView eruptor::hardware::Device::Create_image_view(const vk::Image & image, vk::Format format, vk::ImageAspectFlags aspect_flags, vk::ImageViewType view_type, uint8_t layer_count)
 {
     vk::ImageSubresourceRange sub_resource_range{};
     sub_resource_range.aspectMask = aspect_flags;
     sub_resource_range.baseMipLevel = 0;
     sub_resource_range.levelCount = 1;
     sub_resource_range.baseArrayLayer = 0;
-    sub_resource_range.layerCount = 1;
+    sub_resource_range.layerCount = layer_count;
 
     vk::ImageViewCreateInfo view_info{};
     view_info.image = image;
-    view_info.viewType = vk::ImageViewType::e2D;
+    view_info.viewType = view_type;
     view_info.format = format;
     view_info.subresourceRange = sub_resource_range;
 

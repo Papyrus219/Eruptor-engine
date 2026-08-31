@@ -59,7 +59,7 @@ void eruptor::hardware::Swapchain::Create_image_views(Device & device)
 
     for(auto & image : swap_chain_images)
     {
-        swap_chain_image_views.push_back( device.Create_image_view(image, swap_chain_surface_format.format, vk::ImageAspectFlagBits::eColor) );
+        swap_chain_image_views.push_back( device.Create_image_view(image, swap_chain_surface_format.format, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D) );
     }
 }
 
@@ -67,8 +67,8 @@ void eruptor::hardware::Swapchain::Create_depth_resources(Device& device)
 {
     vk::Format depth_format = Find_depth_format(device);
 
-    depth_image = device.Create_image(swap_chain_extent.width, swap_chain_extent.height, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
-    depth_image_view = device.Create_image_view(depth_image, depth_format, vk::ImageAspectFlagBits::eDepth);
+    depth_image = device.Create_image(swap_chain_extent.width, swap_chain_extent.height, depth_format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, {});
+    depth_image_view = device.Create_image_view(depth_image, depth_format, vk::ImageAspectFlagBits::eDepth, vk::ImageViewType::e2D);
 }
 
 vk::SurfaceFormatKHR eruptor::hardware::Swapchain::Choose_swap_surface_format(const std::vector<vk::SurfaceFormatKHR> & avalible_formats)

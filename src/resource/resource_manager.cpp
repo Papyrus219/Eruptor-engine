@@ -111,7 +111,7 @@ eruptor::resource::Font_handle eruptor::resource::Resource_manager::Add_font_atl
     atlas.width = 1024;
     atlas.height = 1024;
     atlas.bitmap.resize(atlas.width * atlas.height);
-    atlas.starus = Status::PENDING;
+    atlas.status = Status::PENDING;
 
     fonts_atlases.push_back( atlas );
 
@@ -124,8 +124,9 @@ void eruptor::resource::Resource_manager::Load_font_atlases()
 {
     for(auto & font_atlas : fonts_atlases)
     {
+        if(font_atlas.status != Status::PENDING) continue;
         Load_font( font_atlas );
-        font_atlas.starus = Status::LODADED;
+        font_atlas.status = Status::LODADED;
     }
 
     hw_resource_manager->Upload_data_to_GPU();

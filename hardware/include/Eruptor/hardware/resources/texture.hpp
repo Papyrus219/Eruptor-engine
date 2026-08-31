@@ -9,12 +9,18 @@
 namespace eruptor::hardware
 {
 
+enum class Texture_type
+{
+    TYPE_2D,
+    TYPE_CUBE
+};
+
 class Device;
 
 class Texture
 {
 public:
-    void Init(Device & device, int width, int height, vk::Format format, vk::DeviceSize offset_in_stage_buffer);
+    void Init(Device & device, int width, int height, vk::Format format, vk::DeviceSize offset_in_stage_buffer, Texture_type tex_type, uint8_t layer_count);
     void Create_descriptor_set(Device & device, vk::raii::DescriptorPool & pool, const vk::raii::DescriptorSetLayout & layout, const vk::raii::Sampler & sampler);
 
     vma::raii::Image texture_image = nullptr;
@@ -27,6 +33,7 @@ public:
 
     uint32_t width{};
     uint32_t height{};
+    uint8_t layer_count{};
 };
 
 }

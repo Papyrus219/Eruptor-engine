@@ -46,7 +46,7 @@ struct Font_atlas
 {
     std::filesystem::path path{};
 
-    Status starus{ Status::UNINITIALIZED };
+    Status status{ Status::UNINITIALIZED };
 
     Texture_handle texture_handle{};
     float size{};
@@ -82,8 +82,6 @@ public:
     void Load_font_atlases();
 
     std::vector<Text_vertex_data> Generate_text_vertices_data(std::string_view text, float start_x, float start_y, Font_handle font_handle, glm::u8vec4 color);
-
-    ///@todo Implenet text functions
 
     void Add_model_alias(uint32_t model_id, const std::string & model_alias);
     std::string_view Get_model_alias(uint32_t model_id);
