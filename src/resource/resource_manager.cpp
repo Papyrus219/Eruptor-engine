@@ -34,7 +34,10 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
 
     tex_data.format = vk::Format::eR8G8B8A8Srgb;
 
-    textures_handles.push_back( Texture_handle{ hw_resource_manager.Stage_texture_data( tex_data ) } );
+    textures.push_back({});
+    textures.back().path = "../../textures/nothing.png";
+    textures.back().status = Status::PENDING;
+    textures.back().resource = Texture{.hw_tex_handle = Hardware_Texture_handle{ hw_resource_manager.Stage_texture_data( tex_data ) }};
     stbi_image_free( tex_data.pixels );
 
     if(FT_Init_FreeType(&free_type))
@@ -45,9 +48,30 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
     event_manager.Add_listener( *this );
 }
 
-eruptor::resource::Model & eruptor::resource::Resource_manager::Get_model(Model_handle & model_handle)
+eruptor::resource::Model & eruptor::resource::Resource_manager::Get_model(Model_handle & model_handle, bool skip_assertion)
 {
-    return models[ model_handle.Get_id() ];
+#ifndef NDEBUG
+    if(!skip_assertion)
+    {
+        assert( models[ model_handle.Get_id() ].status == Status::LODADED);
+    }
+#endif //NDEBUG
+
+    return models[ model_handle.Get_id() ].resource;
+}
+
+eruptor::resource::Font_atlas & eruptor::resource::Resource_manager::Get_font_atlas(Font_handle & font_handle)
+{
+    assert(fonts_atlases[ font_handle.Get_id() ].status == Status::LODADED);
+
+    return fonts_atlases[ font_handle.Get_id() ].resource;
+}
+
+eruptor::resource::Texture eruptor::resource::Resource_manager::Get_texture(Resource_Texture_handle & texture_handle)
+{
+    assert( textures[ texture_handle.Get_id() ].status == Status::LODADED );
+
+    return textures[ texture_handle.Get_id() ].resource;
 }
 
 eruptor::physic::AABB eruptor::resource::Resource_manager::Get_model_aabb(Model_handle & model_handle)
@@ -76,11 +100,6 @@ std::string_view eruptor::resource::Resource_manager::Get_model_alias(uint32_t m
     return models_aliases[ model_id ];
 }
 
-eruptor::resource::Font_atlas & eruptor::resource::Resource_manager::Get_font_atlas(Font_handle & font_handle)
-{
-    return fonts_atlases[ font_handle.Get_id() ];
-}
-
 eruptor::resource::Model_handle eruptor::resource::Resource_manager::Get_model_handle(std::string_view model_alias)
 {
     for(auto & [id, alias] : models_aliases)
@@ -92,6 +111,11 @@ eruptor::resource::Model_handle eruptor::resource::Resource_manager::Get_model_h
     }
 
     throw std::runtime_error{ std::string{"No model with alias: "}.append(model_alias) };
+}
+
+const std::filesystem::path & eruptor::resource::Resource_manager::Get_model_path(Model_handle & model_handle) const
+{
+    return models[ model_handle.Get_id() ].path;
 }
 
 eruptor::resource::Font_handle eruptor::resource::Resource_manager::Add_font_atlas(const std::filesystem::path & path, float font_size)
@@ -106,18 +130,50 @@ eruptor::resource::Font_handle eruptor::resource::Resource_manager::Add_font_atl
     }
 
     Font_atlas atlas{};
-    atlas.path = path;
     atlas.size = font_size;
     atlas.width = 1024;
     atlas.height = 1024;
     atlas.bitmap.resize(atlas.width * atlas.height);
-    atlas.status = Status::PENDING;
 
-    fonts_atlases.push_back( atlas );
+    fonts_atlases.push_back({});
+    fonts_atlases.back().path = path;
+    fonts_atlases.back().status = Status::PENDING;
+    fonts_atlases.back().resource = atlas;
 
     Font_handle font_handle{ static_cast<uint32_t>(fonts_atlases.size() - 1) };
 
     return font_handle;
+}
+
+void eruptor::resource::Resource_manager::Load_resources()
+{
+    Load_models();
+    Load_font_atlases();
+    Load_textures();
+}
+
+void eruptor::resource::Resource_manager::Load_textures()
+{
+    for(auto texture_resource : textures)
+    {
+        if(texture_resource.status != Status::PENDING) continue;
+
+        hardware::Texture_data tex_data{};
+        tex_data.format = (texture_resource.resource.type == Texture_type::DIFFUSE)? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8Unorm;
+        tex_data.pixels = stbi_load( (texture_path / texture_resource.path).c_str(), &tex_data.width, &tex_data.height, nullptr, ((texture_resource.resource.type == Texture_type::DIFFUSE)? 4 : 1) );
+
+        if(!tex_data.pixels)
+        {
+            throw std::runtime_error{"failed to load texture image!"};
+        }
+
+        tex_data.tex_chanels = (texture_resource.resource.type == Texture_type::DIFFUSE)? 4 : 1;
+
+        texture_resource.resource.hw_tex_handle = Hardware_Texture_handle{hw_resource_manager->Stage_texture_data(tex_data)};
+        texture_resource.status = Status::LODADED;
+
+        stbi_image_free(tex_data.pixels);
+    }
 }
 
 void eruptor::resource::Resource_manager::Load_font_atlases()
@@ -125,18 +181,19 @@ void eruptor::resource::Resource_manager::Load_font_atlases()
     for(auto & font_atlas : fonts_atlases)
     {
         if(font_atlas.status != Status::PENDING) continue;
-        Load_font( font_atlas );
+
+        Load_font( font_atlas.resource, font_atlas.path );
         font_atlas.status = Status::LODADED;
     }
 
     hw_resource_manager->Upload_data_to_GPU();
 }
 
-void eruptor::resource::Resource_manager::Load_font(Font_atlas & font_atlas)
+void eruptor::resource::Resource_manager::Load_font(Font_atlas & font_atlas, const std::filesystem::path & path)
 {
     FT_Face face{};
 
-    if(FT_New_Face(free_type, font_atlas.path.c_str(), 0, &face))
+    if(FT_New_Face(free_type, path.c_str(), 0, &face))
     {
         throw std::runtime_error{"Failed to load font"};
     }
@@ -224,14 +281,19 @@ void eruptor::resource::Resource_manager::Load_font(Font_atlas & font_atlas)
     texture_data.pixels = font_atlas.bitmap.data();
     texture_data.format = vk::Format::eR8Unorm;
 
-    Texture_handle tex_handle{hw_resource_manager->Stage_texture_data(texture_data)};
+    textures.push_back({});
+    textures.back().resource.hw_tex_handle =  Hardware_Texture_handle{hw_resource_manager->Stage_texture_data(texture_data)};
+    textures.back().resource.type = Texture_type::SPECULAR;
+    textures.back().status = Status::LODADED;
+
+    Resource_Texture_handle tex_handle{ static_cast<uint32_t>( textures.size() - 1 ) };
 
     font_atlas.texture_handle = tex_handle;
 }
 
 std::vector<eruptor::resource::Text_vertex_data> eruptor::resource::Resource_manager::Generate_text_vertices_data(std::string_view text, float start_x, float start_y, Font_handle font_handle, glm::u8vec4 color)
 {
-    auto & font_atlas = fonts_atlases[font_handle.Get_id()];
+    auto & font_atlas = fonts_atlases[font_handle.Get_id()].resource;
 
     std::vector<Text_vertex_data> vertices{};
     vertices.reserve(text.size() * 6);
@@ -284,7 +346,7 @@ std::vector<eruptor::resource::Text_vertex_data> eruptor::resource::Resource_man
 eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(const std::filesystem::path & path)
 {
     auto it = std::ranges::find_if(models,
-              [&path](const Model & model)
+              [&path](const Resource<Model> & model)
               {
                 return model.path == path;
               });
@@ -294,7 +356,7 @@ eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(c
         return Model_handle{ static_cast<uint32_t>( it - models.begin() ) };
     }
 
-    models.push_back({Status::PENDING, path});
+    models.push_back({Status::PENDING, path, {}});
     return Model_handle{ static_cast<uint32_t>(models.size() - 1) };
 }
 
@@ -315,24 +377,24 @@ void eruptor::resource::Resource_manager::Load_models()
     }
 }
 
-void eruptor::resource::Resource_manager::Load_model(Model & model)
+void eruptor::resource::Resource_manager::Load_model(Resource<Model> & model_resource)
 {
     Assimp::Importer importer{};
-    const aiScene * scene = importer.ReadFile(model.path, aiProcess_Triangulate | aiProcess_PreTransformVertices);
+    const aiScene * scene = importer.ReadFile(model_resource.path, aiProcess_Triangulate | aiProcess_PreTransformVertices);
 
     std::vector<glm::vec3> all_vertecies{};
 
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
-        model.status = Status::ERROR;
+        model_resource.status = Status::ERROR;
         throw std::runtime_error{" ERROR::REOUURCE::RESOURCE_MANAGER::Failed to load model."};
     }
-    auto directory = model.path.parent_path();
+    auto directory = model_resource.path.parent_path();
 
-    Process_node(scene->mRootNode, scene, model, directory, all_vertecies);
+    Process_node(scene->mRootNode, scene, model_resource.resource, directory, all_vertecies);
 
-    Calculate_model_hitbox(model, all_vertecies);
-    model.status = Status::LODADED;
+    Calculate_model_hitbox(model_resource.resource, all_vertecies);
+    model_resource.status = Status::LODADED;
 }
 
 void eruptor::resource::Resource_manager::Process_node(aiNode* node, const aiScene* scene, Model& model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies)
@@ -357,8 +419,8 @@ void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiSce
         Material material{};
         aiMaterial * ai_material = scene->mMaterials[mesh->mMaterialIndex];
 
-        material.diffuse_texture_handle = Load_material_texture(ai_material, aiTextureType_DIFFUSE, Texture_type::DIFFUSE, directory);
-        material.specular_texture_handle = Load_material_texture(ai_material, aiTextureType_SPECULAR, Texture_type::SPECULAR, directory);
+        material.diffuse_texture_handle = Add_material_texture(ai_material, aiTextureType_DIFFUSE, Texture_type::DIFFUSE, directory);
+        material.specular_texture_handle = Add_material_texture(ai_material, aiTextureType_SPECULAR, Texture_type::SPECULAR, directory);
 
         this->materials.push_back(material);
         model.materials_handles.emplace_back( static_cast<uint32_t>(materials.size() - 1) ) ;
@@ -417,39 +479,25 @@ void eruptor::resource::Resource_manager::Process_mesh(aiMesh* mesh, const aiSce
     model.Meshes_handles.push_back( mesh_handle );
 }
 
-eruptor::resource::Texture_handle eruptor::resource::Resource_manager::Load_material_texture(aiMaterial* mat, aiTextureType ai_type, Texture_type type, const std::filesystem::path & directory)
+eruptor::resource::Resource_Texture_handle eruptor::resource::Resource_manager::Add_material_texture(aiMaterial* mat, aiTextureType ai_type, Texture_type type, const std::filesystem::path & directory)
 {
-    hardware::Texture_data tex_data{};
-
     aiString str{};
     if(mat->GetTexture(ai_type, 0, &str) != AI_SUCCESS)
     {
-        return Texture_handle{0};
+        return Resource_Texture_handle{0};
     }
-    tex_data.format = (type == Texture_type::DIFFUSE)? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8Unorm;
 
     if(str.Empty())
     {
-        return Texture_handle{0};
+        return Resource_Texture_handle{0};
     }
 
-    int loaded_chanels = (type == Texture_type::DIFFUSE)? STBI_rgb_alpha : STBI_grey;
+    textures.push_back({});
+    textures.back().path = std::filesystem::path{str.C_Str()}.filename();
+    textures.back().status = Status::PENDING;
+    textures.back().resource.type = type;
 
-    tex_data.pixels = stbi_load( (directory / std::filesystem::path{str.C_Str()}.filename()).string().c_str()  , &tex_data.width, &tex_data.height, &tex_data.tex_chanels, loaded_chanels);
-
-    if(!tex_data.pixels)
-    {
-        throw std::runtime_error{"failed to load texture image!"};
-    }
-
-    tex_data.tex_chanels = (type == Texture_type::DIFFUSE)? 4 : 1;
-
-    Texture_handle tex_handle{ hw_resource_manager->Stage_texture_data(tex_data)};
-    textures_handles.push_back(tex_handle);
-
-    stbi_image_free(tex_data.pixels);
-
-    return tex_handle;
+    return Resource_Texture_handle{ static_cast<uint32_t>(textures.size() - 1)};
 }
 
 void eruptor::resource::Resource_manager::Calculate_model_hitbox(Model & model, std::vector<glm::vec3> & all_vertecies)
@@ -558,7 +606,6 @@ void eruptor::resource::Resource_manager::Calculate_capsule_hitbox(physic::Capsu
     glm::mat3 cov = Compute_covariance(all_vertecies, centroid);
     glm::mat3 eigen_vectors = Jacobi_eigenvectors(cov);
 
-    // 1. Sprawdź wszystkie 3 osie i wybierz tę, która daje największą rozpiętość (najdłuższy wymiar modelu)
     glm::vec3 best_axis{1.0f, 0.0f, 0.0f};
     float max_span = -1.0f;
     float best_min_proj = 0.0f;
@@ -589,11 +636,9 @@ void eruptor::resource::Resource_manager::Calculate_capsule_hitbox(physic::Capsu
         }
     }
 
-    // 2. Ustaw faktyczne punkty początkowe i końcowe kapsuły na pełnym zakresie modelu (bez sztucznego obcinania paddingiem)
     capsule.start = centroid + best_axis * best_min_proj;
     capsule.end = centroid + best_axis * best_max_proj;
 
-    // 3. Oblicz promień jako maksymalną odległość wierzchołka od odcinka [start, end]
     float max_dist_sq = 0.0f;
     glm::vec3 ba = capsule.end - capsule.start;
     float ba_len_sq = glm::dot(ba, ba);

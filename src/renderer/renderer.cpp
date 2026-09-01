@@ -85,8 +85,6 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
     auto model_handle = object.Get_model_handle();
     auto model_data = rs_resource_manager->Get_model( model_handle );
 
-    assert(model_data.status == resource::Status::LODADED);
-
     if(object.shading_type == scene::Shading_type::OPAQUE)
     {
         Render_request<hardware::Push_constant_opaque> opaque_request{};
