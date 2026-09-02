@@ -9,9 +9,8 @@ eruptor::hardware::Window::Window(): event_manager{event::event_manager}
 
 void eruptor::hardware::Window::Init()
 {
-#ifndef NDEBUG
+    //For 60 FPS limit
     glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
-#endif
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
