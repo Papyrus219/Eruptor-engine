@@ -93,11 +93,13 @@ vk::PresentModeKHR eruptor::hardware::Swapchain::Choose_swap_present_mode(const 
 {
     assert(std::ranges::any_of(avalible_present_modes, [](auto present_mode) {return present_mode == vk::PresentModeKHR::eFifo;}));
 
-    return std::ranges::any_of(avalible_present_modes,
-            [](const vk::PresentModeKHR value)
-            {
-                return vk::PresentModeKHR::eMailbox == value;
-            }) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+    // return std::ranges::any_of(avalible_present_modes,
+    //         [](const vk::PresentModeKHR value)
+    //         {
+    //             return vk::PresentModeKHR::eMailbox == value;
+    //         }) ? vk::PresentModeKHR::eMailbox : vk::PresentModeKHR::eFifo;
+
+    return vk::PresentModeKHR::eFifo;
 }
 
 vk::Extent2D eruptor::hardware::Swapchain::Choose_swap_extent(Window & window, const vk::SurfaceCapabilitiesKHR& capabilities)
