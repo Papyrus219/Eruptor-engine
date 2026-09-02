@@ -31,6 +31,7 @@ struct Render_object
     void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
 
     physic::AABB Get_aabb();
+    physic::AABB Get_swept_aabb();
     physic::Hitbox Get_hitbox();
     resource::Model_handle Get_model_handle() const {return model_handle;}
 
@@ -62,13 +63,16 @@ private:
     resource::Model_handle model_handle{};
     physic::AABB model_aabb{};
     physic::AABB transformed_aabb{};
+    physic::AABB last_aabb{};
 
     resource::Hitbox_type hitbox_type{};
     physic::Hitbox model_hitbox{};
     physic::Hitbox transformed_hitbox{};
 
     bool aabb_has_changed{};
+    bool reset_last_aabb{};
     bool hitbox_has_changed{};
+    bool reset_last_hitbox{};
 
     friend class Scene_parser;
 };

@@ -21,7 +21,7 @@ class Physic_manager: public event::Event_listener
 {
 public:
     Physic_manager();
-    void Chceck_colisions(scene::Scene & scene);
+    void Chceck_colisions(scene::Scene & scene, float delta_time);
 
     void On_event(const event::Event & event) override;
 
@@ -73,6 +73,8 @@ private:
         {
             return Capsule_vs_Sphere_test(capsule, sphere);
         }
+
+        float delta_time{};
 
     private:
         bool Sphere_vs_sphere_test(const Sphere_hitbox & a, const Sphere_hitbox & b) const;

@@ -7,7 +7,7 @@ eruptor::physic::Physic_manager::Physic_manager(): event_manager{ event::event_m
     event_manager.Add_listener( *this );
 }
 
-void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
+void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, float delta_time)
 {
     can_coliding.clear();
 
@@ -15,8 +15,8 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
     {
         for(auto j{i + 1}; j < scene.render_objects.size(); j++)
         {
-            auto aabb_a = scene.render_objects[i].Get_aabb();
-            auto aabb_b = scene.render_objects[j].Get_aabb();
+            auto aabb_a = scene.render_objects[i].Get_swept_aabb();
+            auto aabb_b = scene.render_objects[j].Get_swept_aabb();
 
             bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
             bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
@@ -28,6 +28,8 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
             }
         }
     }
+
+    colision_visitor.delta_time = delta_time;
 
     for(auto i{0UZ}; i < can_coliding.size(); i++)
     {
@@ -44,10 +46,42 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene)
 
 bool eruptor::physic::Physic_manager::Colision_visitor::Sphere_vs_sphere_test(const Sphere_hitbox& a, const Sphere_hitbox& b) const
 {
-    float dist_squared = glm::dot(b.center - a.center, b.center - a.center);
-    float radius_sum = a.radius + b.radius;
+    glm::vec3 pos = a.last_center - b.last_center;
 
-    return dist_squared <= (radius_sum * radius_sum);
+    glm::vec3 movement_a = a.center - a.last_center;
+    glm::vec3 movement_b = b.center - b.last_center;
+
+    glm::vec3 v = movement_a - movement_b;
+
+    float radius = a.radius + b.radius;
+
+    if(glm::dot(pos, pos) <= radius * radius)
+    {
+        return true;
+    }
+
+    float A = glm::dot(v,v);
+    if(A <= 0.000001f)
+    {
+        return false;
+    }
+
+    float B = 2.0f * glm::dot(pos, v);
+    float C = glm::dot(pos, pos) - radius * radius;
+
+    float discriminant = B * B - 4.0f * A * C;
+
+    if(discriminant < 0.0f)
+    {
+        return false;
+    }
+
+    float sqrt_d = std::sqrt(discriminant);
+
+    float t0 = (-B - sqrt_d) / (2.0f * A);
+    float t1 = (-B + sqrt_d) / (2.0f * A);
+
+    return (t0 >= 0.0f && t0 <= 1.0f) || (t1 >= 0.0f && t1 <= 1.0f);
 }
 
 bool eruptor::physic::Physic_manager::Colision_visitor::OBB_vs_OBB_test(const OBB_hitbox& a, const OBB_hitbox& b) const

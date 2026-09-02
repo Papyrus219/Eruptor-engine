@@ -24,6 +24,7 @@ struct OBB_hitbox
 
 struct Sphere_hitbox
 {
+    glm::vec3 last_center{};
     glm::vec3 center{};
     float radius{};
 };

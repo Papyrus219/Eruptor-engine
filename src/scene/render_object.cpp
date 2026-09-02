@@ -17,6 +17,7 @@ void eruptor::scene::Render_object::Set_model(resource::Resource_manager& resour
 
     this->hitbox_type = resource_manager.Get_model( model_handle ).hitbox_type;
     this->model_hitbox = resource_manager.Get_model_hitbox( model_handle );
+    this->transformed_hitbox = this->model_hitbox;
 
     this->aabb_has_changed = true;
     this->hitbox_has_changed = true;
@@ -26,6 +27,8 @@ eruptor::physic::AABB eruptor::scene::Render_object::Get_aabb()
 {
     if(aabb_has_changed)
     {
+        auto old_aabb = transformed_aabb;
+
         glm::vec3 corners[8] =
         {
             {model_aabb.min.x, model_aabb.min.y, model_aabb.min.z},
@@ -50,10 +53,28 @@ eruptor::physic::AABB eruptor::scene::Render_object::Get_aabb()
             transformed_aabb.max = glm::max(transformed_aabb.max, transformed);
         }
 
+        if(reset_last_aabb)
+        {
+            last_aabb = transformed_aabb;
+            reset_last_aabb = false;
+        }
+        else
+        {
+            last_aabb = old_aabb;
+        }
+
         aabb_has_changed = false;
     }
 
     return transformed_aabb;
+}
+
+eruptor::physic::AABB eruptor::scene::Render_object::Get_swept_aabb()
+{
+    physic::AABB current_aabb = Get_aabb();
+    physic::AABB last_aabb = this->last_aabb;
+
+    return {glm::min(last_aabb.min, current_aabb.min), glm::max(last_aabb.max, current_aabb.max)};
 }
 
 eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
@@ -62,7 +83,20 @@ eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
     {
         if(hitbox_type == resource::Hitbox_type::SPHERE)
         {
-            transformed_hitbox = std::get<physic::Sphere_hitbox>(model_hitbox) * Get_model_matrix();
+            auto new_sphere = std::get<physic::Sphere_hitbox>(model_hitbox) * Get_model_matrix();
+
+            auto & old_sphere = std::get<physic::Sphere_hitbox>(transformed_hitbox);
+
+            if(reset_last_hitbox)
+            {
+                new_sphere.last_center = new_sphere.center;
+            }
+            else
+            {
+                new_sphere.last_center = old_sphere.center;
+            }
+
+            transformed_hitbox = new_sphere;
         }
         else if(hitbox_type == resource::Hitbox_type::OBB)
         {
@@ -74,6 +108,7 @@ eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
         }
 
         hitbox_has_changed = false;
+        reset_last_hitbox = false;
     }
 
     return transformed_hitbox;
@@ -87,6 +122,9 @@ void eruptor::scene::Render_object::Set_position(glm::vec3 new_position)
 
     aabb_has_changed = true;
     hitbox_has_changed = true;
+
+    reset_last_aabb = true;
+    reset_last_hitbox = true;
 }
 
 void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale, std::optional<float> snap_y)
