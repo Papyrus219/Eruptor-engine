@@ -153,7 +153,7 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
             debug_request.push_constant = push_constant_debug;
 
             render_queue.debug_queue.push_back( debug_request );
-       }
+        }
     }
 }
 
@@ -166,7 +166,8 @@ void eruptor::renderer::Renderer::Stage_text_render_data(std::string_view text, 
     request.vertices.resize( text_verticies.size() );
     memcpy(request.vertices.data(), text_verticies.data(), text_verticies.size() * sizeof( hardware::Text_vertex ));
 
-    request.font_texture_id = rs_resource_manager->Get_font_atlas( font_handle ).texture_handle;
+    auto texture = rs_resource_manager->Get_texture(rs_resource_manager->Get_font_atlas( font_handle ).texture_handle);
+    request.font_texture_id = texture.hw_tex_handle.Get_id();
 
     render_queue.text_queue.push_back( std::move(request) );
 }
@@ -208,21 +209,21 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     hardware::utilities::Transition_image_layout(
         command_buffor,
         swap_chain.Get_image(image_index),
-        vk::ImageLayout::eUndefined,
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::QueueFamilyIgnored,
-        vk::QueueFamilyIgnored,
-        vk::ImageAspectFlagBits::eColor
+                                                 vk::ImageLayout::eUndefined,
+                                                 vk::ImageLayout::eColorAttachmentOptimal,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::ImageAspectFlagBits::eColor
     );
 
     hardware::utilities::Transition_image_layout(
         command_buffor,
         swap_chain.Get_depth_image(),
-        vk::ImageLayout::eUndefined,
-        vk::ImageLayout::eDepthStencilAttachmentOptimal,
-        vk::QueueFamilyIgnored,
-        vk::QueueFamilyIgnored,
-        vk::ImageAspectFlagBits::eDepth
+                                                 vk::ImageLayout::eUndefined,
+                                                 vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::ImageAspectFlagBits::eDepth
     );
 
     vk::ClearValue clear_color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
@@ -266,9 +267,9 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     {
         resource::Material_handle mat_handle{render_request.material_id};
         auto material = rs_resource_manager->Get_material( mat_handle );
-        auto diffuse_texture = material.diffuse_texture_handle;
+        auto diffuse_texture = rs_resource_manager->Get_texture( material.diffuse_texture_handle );
 
-        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), 2, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
+        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), 2, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.hw_tex_handle.Get_id() ), nullptr);
         command_buffor.pushConstants<hardware::Push_constant_opaque>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::OPAQUE), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
 
         command_buffor.drawIndexed(render_request.indices_amount, 1, render_request.indices_offset, render_request.vertex_offset, 0);
@@ -282,9 +283,9 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     {
         resource::Material_handle mat_handle{render_request.material_id};
         auto material = rs_resource_manager->Get_material( mat_handle );
-        auto diffuse_texture = material.diffuse_texture_handle;
+        auto diffuse_texture = rs_resource_manager->Get_texture( material.diffuse_texture_handle );
 
-        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::LIGHT_SOURCE), 1, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.Get_id() ), nullptr);
+        command_buffor.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::LIGHT_SOURCE), 1, *hw_resource_manager->Get_texture_descriptor_set( diffuse_texture.hw_tex_handle.Get_id() ), nullptr);
         command_buffor.pushConstants<hardware::Push_constant_light_source>(hardware->Get_pipelines().Get_pipeline_layout(hardware::Pipeline_id::LIGHT_SOURCE), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, render_request.push_constant );
 
         command_buffor.drawIndexed(render_request.indices_amount, 1, render_request.indices_offset, render_request.vertex_offset, 0);
@@ -330,11 +331,11 @@ void eruptor::renderer::Renderer::Flush_render_buffor()
     hardware::utilities::Transition_image_layout(
         command_buffor,
         swap_chain.Get_image(image_index),
-        vk::ImageLayout::eColorAttachmentOptimal,
-        vk::ImageLayout::ePresentSrcKHR,
-        vk::QueueFamilyIgnored,
-        vk::QueueFamilyIgnored,
-        vk::ImageAspectFlagBits::eColor
+                                                 vk::ImageLayout::eColorAttachmentOptimal,
+                                                 vk::ImageLayout::ePresentSrcKHR,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::QueueFamilyIgnored,
+                                                 vk::ImageAspectFlagBits::eColor
     );
 
     command_buffor.end();

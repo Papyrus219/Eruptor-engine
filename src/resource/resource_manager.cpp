@@ -14,6 +14,7 @@
 #include <iostream>
 #include <fstream>
 #include <print>
+#include <format>
 
 eruptor::resource::Resource_manager::Resource_manager(): event_manager{ event::event_manager }
 {
@@ -24,21 +25,9 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
 {
     this->hw_resource_manager = &hw_resource_manager;
 
-    hardware::Texture_data tex_data{};
-    tex_data.pixels = stbi_load("../../textures/nothing.png", &tex_data.width, &tex_data.height, &tex_data.tex_chanels, STBI_rgb_alpha);
-
-    if(!tex_data.pixels)
-    {
-        throw std::runtime_error{"failed to load nothing texture!"};
-    }
-
-    tex_data.format = vk::Format::eR8G8B8A8Srgb;
-
     textures.push_back({});
-    textures.back().path = "../../textures/nothing.png";
+    textures.back().path = "nothing.png";
     textures.back().status = Status::PENDING;
-    textures.back().resource = Texture{.hw_tex_handle = Hardware_Texture_handle{ hw_resource_manager.Stage_texture_data( tex_data ) }};
-    stbi_image_free( tex_data.pixels );
 
     if(FT_Init_FreeType(&free_type))
     {
@@ -50,12 +39,12 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
 
 eruptor::resource::Model & eruptor::resource::Resource_manager::Get_model(Model_handle & model_handle, bool skip_assertion)
 {
-#ifndef NDEBUG
+    #ifndef NDEBUG
     if(!skip_assertion)
     {
         assert( models[ model_handle.Get_id() ].status == Status::LODADED);
     }
-#endif //NDEBUG
+    #endif //NDEBUG
 
     return models[ model_handle.Get_id() ].resource;
 }
@@ -150,21 +139,23 @@ void eruptor::resource::Resource_manager::Load_resources()
     Load_models();
     Load_font_atlases();
     Load_textures();
+
+    hw_resource_manager->Upload_data_to_GPU();
 }
 
 void eruptor::resource::Resource_manager::Load_textures()
 {
-    for(auto texture_resource : textures)
+    for(auto & texture_resource : textures)
     {
         if(texture_resource.status != Status::PENDING) continue;
 
         hardware::Texture_data tex_data{};
         tex_data.format = (texture_resource.resource.type == Texture_type::DIFFUSE)? vk::Format::eR8G8B8A8Srgb : vk::Format::eR8Unorm;
-        tex_data.pixels = stbi_load( (texture_path / texture_resource.path).c_str(), &tex_data.width, &tex_data.height, nullptr, ((texture_resource.resource.type == Texture_type::DIFFUSE)? 4 : 1) );
+        tex_data.pixels = stbi_load( (texture_dirr_path / texture_resource.path).c_str(), &tex_data.width, &tex_data.height, nullptr, ((texture_resource.resource.type == Texture_type::DIFFUSE)? 4 : 1) );
 
         if(!tex_data.pixels)
         {
-            throw std::runtime_error{"failed to load texture image!"};
+            throw std::runtime_error{ std::format("failed to load texture image!, {}", texture_resource.path.string())};
         }
 
         tex_data.tex_chanels = (texture_resource.resource.type == Texture_type::DIFFUSE)? 4 : 1;
@@ -185,8 +176,6 @@ void eruptor::resource::Resource_manager::Load_font_atlases()
         Load_font( font_atlas.resource, font_atlas.path );
         font_atlas.status = Status::LODADED;
     }
-
-    hw_resource_manager->Upload_data_to_GPU();
 }
 
 void eruptor::resource::Resource_manager::Load_font(Font_atlas & font_atlas, const std::filesystem::path & path)
@@ -346,10 +335,10 @@ std::vector<eruptor::resource::Text_vertex_data> eruptor::resource::Resource_man
 eruptor::resource::Model_handle eruptor::resource::Resource_manager::Add_model(const std::filesystem::path & path)
 {
     auto it = std::ranges::find_if(models,
-              [&path](const Resource<Model> & model)
-              {
-                return model.path == path;
-              });
+                                   [&path](const Resource<Model> & model)
+                                   {
+                                       return model.path == path;
+                                   });
 
     if(it != models.end())
     {
@@ -369,11 +358,6 @@ void eruptor::resource::Resource_manager::Load_models()
 
         Load_model(model);
         models_to_load_count++;
-    }
-
-    if(models_to_load_count)
-    {
-        hw_resource_manager->Upload_data_to_GPU();
     }
 }
 
@@ -492,8 +476,18 @@ eruptor::resource::Resource_Texture_handle eruptor::resource::Resource_manager::
         return Resource_Texture_handle{0};
     }
 
+    auto texture_name = std::filesystem::path{str.C_Str()}.filename();
+
+    for(auto i{0UZ}; i < textures.size(); i++)
+    {
+        if(textures[i].path == texture_name)
+        {
+            return Resource_Texture_handle{ static_cast<uint32_t>( i ) };
+        }
+    }
+
     textures.push_back({});
-    textures.back().path = std::filesystem::path{str.C_Str()}.filename();
+    textures.back().path = texture_name;
     textures.back().status = Status::PENDING;
     textures.back().resource.type = type;
 

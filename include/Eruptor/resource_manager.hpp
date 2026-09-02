@@ -86,6 +86,8 @@ public:
 
     void On_event(const event::Event & event) override;
 
+    std::filesystem::path texture_dirr_path{};
+
 private:
     void Load_models();
     void Load_font_atlases();
@@ -117,8 +119,6 @@ private:
     std::vector<Mesh_handle> mesh_handles{};
 
     std::unordered_map<uint32_t, std::string> models_aliases{};
-
-    std::filesystem::path texture_path{};
 
     FT_Library free_type{};
 
