@@ -1,8 +1,10 @@
 #ifndef ERUPTOR_RESOURCE_RESOURCE_MANAGER_HPP
 #define ERUPTOR_RESOURCE_RESOURCE_MANAGER_HPP
 
+#include <Eruptor/resource/resource.hpp>
 #include <Eruptor/resource/model.hpp>
 #include <Eruptor/resource/material.hpp>
+#include <Eruptor/resource/texture.hpp>
 #include <Eruptor/resource/text_vertex_data.hpp>
 #include <Eruptor/event/event_listener.hpp>
 #include <Eruptor/physic/hitbox.hpp>
@@ -44,11 +46,7 @@ struct Glyph
 
 struct Font_atlas
 {
-    std::filesystem::path path{};
-
-    Status status{ Status::UNINITIALIZED };
-
-    Texture_handle texture_handle{};
+    Resource_Texture_handle texture_handle{};
     float size{};
 
     int width{512};
@@ -58,12 +56,6 @@ struct Font_atlas
     std::unordered_map<char32_t, Glyph> glyphs{};
 };
 
-enum class Texture_type
-{
-    DIFFUSE,
-    SPECULAR
-};
-
 class Resource_manager: public eruptor::event::Event_listener
 {
 public:
@@ -71,15 +63,17 @@ public:
 
     void Init(hardware::Resource_manager & hw_resource_manager);
 
-    Model & Get_model(Model_handle & model_handle);
+    Model & Get_model(Model_handle & model_handle, bool skip_assertion = false);
+    Material Get_material(Material_handle & material_handle);
+    Texture Get_texture(Resource_Texture_handle & texture_handle);
+    Font_atlas & Get_font_atlas(Font_handle & font_handle);
+
     Model_handle Get_model_handle(std::string_view model_alias);
     physic::AABB Get_model_aabb(Model_handle & model_handle);
     physic::Hitbox Get_model_hitbox(Model_handle & model_handle);
-    Material Get_material(Material_handle & material_handle);
-    Font_atlas & Get_font_atlas(Font_handle & font_handle);
+    const std::filesystem::path & Get_model_path(Model_handle & model_handle) const;
 
     Font_handle Add_font_atlas(const std::filesystem::path & path, float font_size);
-    void Load_font_atlases();
 
     std::vector<Text_vertex_data> Generate_text_vertices_data(std::string_view text, float start_x, float start_y, Font_handle font_handle, glm::u8vec4 color);
 
@@ -87,17 +81,24 @@ public:
     std::string_view Get_model_alias(uint32_t model_id);
 
     Model_handle Add_model(const std::filesystem::path & path);
-    void Load_models();
+
+    void Load_resources();
 
     void On_event(const event::Event & event) override;
 
+    std::filesystem::path texture_dirr_path{};
+
 private:
-    void Load_model(Model & model);
-    void Load_font(Font_atlas & font_atlas);
+    void Load_models();
+    void Load_font_atlases();
+    void Load_textures();
+
+    void Load_model(Resource<Model> & model_resource);
+    void Load_font(Font_atlas & font_atlas, const std::filesystem::path & path);
 
     void Process_node(aiNode * node, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
     void Process_mesh(aiMesh * mesh, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
-    Texture_handle Load_material_texture(aiMaterial * mat, aiTextureType ai_type, Texture_type type, const std::filesystem::path & directory);
+    Resource_Texture_handle Add_material_texture(aiMaterial * mat, aiTextureType ai_type, Texture_type type, const std::filesystem::path & directory);
 
     void Calculate_model_hitbox(Model & model, std::vector<glm::vec3> & all_vertecies);
 
@@ -108,13 +109,14 @@ private:
     glm::mat3 Compute_covariance(const std::vector<glm::vec3> & all_vertecies, glm::vec3 & centroid);
     glm::mat3 Jacobi_eigenvectors(glm::mat3 & cov, size_t iterations = 20);
 
-    std::vector<Model> models{};
+    std::vector< Resource<Model> > models{};
+    std::vector< Resource<Font_atlas> > fonts_atlases{};
+    std::vector< Resource<Texture> > textures{};
+
     std::vector<physic::AABB> models_AABB{};
     std::vector<physic::Hitbox> models_hitboxes{};
     std::vector<Material> materials{};
-    std::vector<Texture_handle> textures_handles{};
     std::vector<Mesh_handle> mesh_handles{};
-    std::vector<Font_atlas> fonts_atlases{};
 
     std::unordered_map<uint32_t, std::string> models_aliases{};
 

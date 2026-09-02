@@ -188,7 +188,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             }
 
             model_variables[model_name] = {model_path, resource_manager->Add_model(model_path)};
-            current_parsed_model = &resource_manager->Get_model( model_variables[model_name].second );
+            current_parsed_model = &resource_manager->Get_model( model_variables[model_name].second, true);
 
             resource_manager->Add_model_alias(model_variables[model_name].second.Get_id(), std::string{model_name} );
 
@@ -266,7 +266,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
                 return;
             }
 
-            resource_manager->Load_models();
+            resource_manager->Load_resources();
 
             is_in_model_loading_stage = false;
             line_mode = Line_mode::NONE;

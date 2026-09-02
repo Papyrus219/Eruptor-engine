@@ -8,7 +8,8 @@ namespace eruptor::resource
 
 struct Model_tag{};
 struct Mesh_tag{};
-struct Texture_tag{};
+struct Hardware_Texture_tag{};
+struct Resource_Texture_tag{};
 struct Material_tag{};
 struct Font_tag{};
 
@@ -34,7 +35,8 @@ private:
 
 using Model_handle = Resource_handle<Model_tag>;
 using Mesh_handle = Resource_handle<Mesh_tag>;
-using Texture_handle = Resource_handle<Texture_tag>;
+using Hardware_Texture_handle = Resource_handle<Hardware_Texture_tag>;
+using Resource_Texture_handle = Resource_handle<Resource_Texture_tag>;
 using Material_handle = Resource_handle<Material_tag>;
 using Font_handle = Resource_handle<Font_tag>;
 

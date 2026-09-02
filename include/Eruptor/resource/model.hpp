@@ -8,14 +8,6 @@
 namespace eruptor::resource
 {
 
-enum class Status
-{
-    UNINITIALIZED,
-    PENDING,
-    LODADED,
-    ERROR
-};
-
 enum class Hitbox_type
 {
     OBB,
@@ -25,12 +17,7 @@ enum class Hitbox_type
 
 struct Model
 {
-    Model(Status status_, const std::filesystem::path & path_): status{status_}, path{path_} {}
-    Status status{};
     Hitbox_type hitbox_type{};
-
-    std::filesystem::path path{};
-
     std::vector<Mesh_handle> Meshes_handles{};
     std::vector<Material_handle> materials_handles{};
 };

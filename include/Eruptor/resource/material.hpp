@@ -8,8 +8,8 @@ namespace eruptor::resource
 
 struct Material
 {
-    Texture_handle diffuse_texture_handle{};
-    Texture_handle specular_texture_handle{};
+    Resource_Texture_handle diffuse_texture_handle{};
+    Resource_Texture_handle specular_texture_handle{};
 };
 
 }

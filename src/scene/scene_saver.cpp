@@ -25,7 +25,7 @@ std::expected<void, std::string_view> eruptor::scene::Scene_saver::Save_scene_da
     {
         resource::Model_handle model_handle{ model_id };
 
-        std::println(file, "[{} = {}]", resource_manager->Get_model_alias(model_id), resource_manager->Get_model( model_handle ).path.c_str());
+        std::println(file, "[{} = {}]", resource_manager->Get_model_alias(model_id), resource_manager->Get_model_path( model_handle ).c_str());
 
         if(file_version >= File_version::V1_1)
         {
