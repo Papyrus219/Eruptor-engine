@@ -6,7 +6,7 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
 
     if(render_object.Get_is_hitbox_changed())
     {
-
+        auto position = (this->position.has_value())? this->position.value() : render_object.Get_position();
     }
 
     return transformed_hitbox;
