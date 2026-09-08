@@ -35,6 +35,11 @@ struct Render_object
     physic::Hitbox Get_hitbox();
     resource::Model_handle Get_model_handle() const {return model_handle;}
 
+    bool Get_is_aabb_changed() {return aabb_has_changed;}
+    bool Get_is_aabb_reset() {return reset_last_aabb;}
+    bool Get_is_hitbox_changed() {return hitbox_has_changed;}
+    bool Get_is_hitbox_reset() {return reset_last_hitbox;}
+
     //Transformation interface
     void Set_position(glm::vec3 new_position);
     void Set_scale(glm::vec3 new_scale, std::optional<float> snap_y = {});

@@ -2,7 +2,7 @@
 #define ERUPTOR_PHYSIC_PHYSIC_MANAGER_HPP
 
 #include <Eruptor/event/event_listener.hpp>
-#include <Eruptor/physic/hitbox.hpp>
+#include <Eruptor/physic/hitbox_metadata.hpp>
 #include <vector>
 
 namespace eruptor::scene
@@ -25,7 +25,10 @@ public:
 
     void On_event(const event::Event & event) override;
 
+    void Add_hitbox(uint32_t render_id, uint8_t layer);
 private:
+    std::array<std::vector<Hitbox_metadata>, 8>  hitboxes_data{};
+
     class Colision_visitor
     {
     public:
