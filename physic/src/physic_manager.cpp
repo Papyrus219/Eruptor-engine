@@ -1,22 +1,28 @@
 #include <Eruptor/physic/physic_manager.hpp>
 #include <Eruptor/scene/scene.hpp>
 #include <Eruptor/event/event_manager.hpp>
+#include <Eruptor/resource_manager.hpp>
 
 eruptor::physic::Physic_manager::Physic_manager(): event_manager{ event::event_manager }
 {
     event_manager.Add_listener( *this );
 }
 
+void eruptor::physic::Physic_manager::Init(resource::Resource_manager & resource_manager_)
+{
+    this->resource_manager = &resource_manager_;
+}
+
 void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, float delta_time)
 {
     can_coliding.clear();
 
-    for(auto i{1UZ}; i < scene.render_objects.size(); i++)
+    for(auto i{1UZ}; i < hitboxes_data[0].size(); i++)
     {
-        for(auto j{i + 1}; j < scene.render_objects.size(); j++)
+        for(auto j{i + 1}; j < hitboxes_data[0].size(); j++)
         {
-            auto aabb_a = scene.render_objects[i].Get_swept_aabb();
-            auto aabb_b = scene.render_objects[j].Get_swept_aabb();
+            auto aabb_a = hitboxes_data[0][i].Get_swept_aabb(scene);
+            auto aabb_b = hitboxes_data[0][j].Get_swept_aabb(scene);
 
             bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
             bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
@@ -33,7 +39,7 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
 
     for(auto i{0UZ}; i < can_coliding.size(); i++)
     {
-        if( std::visit(colision_visitor, scene.render_objects[ can_coliding[i].first ].Get_hitbox(), scene.render_objects[ can_coliding[i].second ].Get_hitbox()) )
+        if( std::visit(colision_visitor, hitboxes_data[0][ can_coliding[i].first ].Get_hitbox(scene), hitboxes_data[0][ can_coliding[i].second ].Get_hitbox(scene)) )
         {
             event::Event::Collision_occurred colision{};
             colision.object_a_id = can_coliding[i].first;
@@ -258,7 +264,22 @@ bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_OBB_test(cons
     return min_dist_sq <= (cap.radius * cap.radius);
 }
 
-void eruptor::physic::Physic_manager::On_event([[maybe_unused]] const event::Event & event)
+void eruptor::physic::Physic_manager::On_event(const event::Event & event)
 {
-
+    if(auto model_change = event.Get_if<event::Event::Render_object_changed_model>())
+    {
+        for(auto hitbox_data : hitboxes_data[0])
+        {
+            if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
+            {
+                hitbox_data.Set_model(*resource_manager, resource::Model_handle{model_change->render_object_id});
+            }
+        }
+    }
 }
+
+
+
+
+
+

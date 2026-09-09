@@ -16,6 +16,8 @@ void eruptor::Eruptor::Init()
     hardware->Init();
     resource_manager.Init( hardware->Get_resource_manager() );
     renderer.Init(*hardware, resource_manager);
+
+    physic_manager.Init( resource_manager );
 }
 
 eruptor::Eruptor::~Eruptor()

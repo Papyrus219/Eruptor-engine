@@ -5,6 +5,11 @@
 #include <Eruptor/physic/hitbox_metadata.hpp>
 #include <vector>
 
+namespace eruptor::resource
+{
+    class Resource_manager;
+}
+
 namespace eruptor::scene
 {
     struct Scene;
@@ -21,6 +26,8 @@ class Physic_manager: public event::Event_listener
 {
 public:
     Physic_manager();
+    void Init(resource::Resource_manager & resource_manager_);
+
     void Chceck_colisions(scene::Scene & scene, float delta_time);
 
     void On_event(const event::Event & event) override;
@@ -100,6 +107,7 @@ private:
     std::vector< std::pair<uint32_t, uint32_t> > can_coliding{};
 
     event::Event_manager & event_manager;
+    resource::Resource_manager * resource_manager{};
 };
 
 }

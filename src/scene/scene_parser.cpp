@@ -333,7 +333,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
                 return;
             }
 
-            scene.render_objects.back().Set_model(*resource_manager, scene.render_objects.size() - 1, model_variables[model_variable_name].second);
+            scene.render_objects.back().Set_model(scene.render_objects.size() - 1, model_variables[model_variable_name].second);
 
             line_mode = Line_mode::OBJECT_POSITION;
             break;

@@ -1,4 +1,11 @@
 #include <Eruptor/physic/hitbox_metadata.hpp>
+#include <Eruptor/resource_manager.hpp>
+
+void eruptor::physic::Hitbox_metadata::Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle)
+{
+    model_hitbox = resource_manager.Get_model_hitbox( model_handle );
+    model_aabb = resource_manager.Get_model_aabb( model_handle );
+}
 
 const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::Scene & scene)
 {

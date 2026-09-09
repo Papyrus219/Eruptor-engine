@@ -8,16 +8,23 @@
 #include <optional>
 #include <cstdint>
 
+namespace eruptor::resource
+{
+    class Resource_manager;
+}
+
 namespace eruptor::physic
 {
 
 struct Hitbox_metadata
 {
-    ///@todo Implement Set_model
+    void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
 
     const AABB & Get_aabb(scene::Scene & scene);
     const Hitbox & Get_hitbox(scene::Scene & scene);
     eruptor::physic::AABB Get_swept_aabb(scene::Scene & scene);
+
+    uint32_t Get_render_object_id() const {return this->render_object_id;}
 
 private:
     uint32_t render_object_id{};

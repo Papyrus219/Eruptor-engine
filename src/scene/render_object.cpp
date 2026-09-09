@@ -11,7 +11,7 @@ void eruptor::scene::Render_object::Reset()
 }
 
 
-void eruptor::scene::Render_object::Set_model(resource::Resource_manager & resource_manager, uint32_t object_id, resource::Model_handle model_handle)
+void eruptor::scene::Render_object::Set_model(uint32_t object_id, resource::Model_handle model_handle)
 {
     this->model_handle = model_handle;
 

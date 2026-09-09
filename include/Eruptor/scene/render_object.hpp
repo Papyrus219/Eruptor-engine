@@ -8,11 +8,6 @@
 #include <Eruptor/resource/model.hpp>
 #include <optional>
 
-namespace eruptor::resource
-{
-    class Resource_manager;
-}
-
 namespace eruptor::scene
 {
 
@@ -28,7 +23,7 @@ struct Render_object
 {
     void Reset();
 
-    void Set_model(resource::Resource_manager & resource_manager, uint32_t object_id, resource::Model_handle model_handle);
+    void Set_model(uint32_t object_id, resource::Model_handle model_handle);
 
     resource::Model_handle Get_model_handle() const {return model_handle;}
 
