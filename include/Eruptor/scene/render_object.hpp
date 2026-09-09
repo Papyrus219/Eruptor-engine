@@ -28,17 +28,9 @@ struct Render_object
 {
     void Reset();
 
-    void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
+    void Set_model(resource::Resource_manager & resource_manager, uint32_t object_id, resource::Model_handle model_handle);
 
-    physic::AABB Get_aabb();
-    physic::AABB Get_swept_aabb();
-    physic::Hitbox Get_hitbox();
     resource::Model_handle Get_model_handle() const {return model_handle;}
-
-    bool Get_is_aabb_changed() {return aabb_has_changed;}
-    bool Get_is_aabb_reset() {return reset_last_aabb;}
-    bool Get_is_hitbox_changed() {return hitbox_has_changed;}
-    bool Get_is_hitbox_reset() {return reset_last_hitbox;}
 
     //Transformation interface
     void Set_position(glm::vec3 new_position);
@@ -52,7 +44,7 @@ struct Render_object
 
     [[nodiscard]] glm::vec3 Get_position() const {return transformation.Get_position();}
     [[nodiscard]] glm::vec3 Get_scale() const {return transformation.Get_scale();}
-    [[nodiscard]] glm::quat Get_rotaion() const {return transformation.Get_rotation();}
+    [[nodiscard]] glm::quat Get_rotation() const {return transformation.Get_rotation();}
     [[nodiscard]] const glm::mat4x4 & Get_model_matrix() {return transformation.Get_model_matrix();}
 
     resource::Color color{};
@@ -61,23 +53,18 @@ struct Render_object
     bool is_selected{};
     bool is_active{true};
 
+    bool aabb_has_changed{};
+    bool reset_last_aabb{};
+    bool hitbox_has_changed{};
+    bool reset_last_hitbox{};
+
+    bool model_changed{};
+
 private:
     void Snap_to_y(float target_y);
 
     Transformation transformation{};
     resource::Model_handle model_handle{};
-    physic::AABB model_aabb{};
-    physic::AABB transformed_aabb{};
-    physic::AABB last_aabb{};
-
-    resource::Hitbox_type hitbox_type{};
-    physic::Hitbox model_hitbox{};
-    physic::Hitbox transformed_hitbox{};
-
-    bool aabb_has_changed{};
-    bool reset_last_aabb{};
-    bool hitbox_has_changed{};
-    bool reset_last_hitbox{};
 
     friend class Scene_parser;
 };

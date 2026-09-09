@@ -80,6 +80,14 @@ public:
         using I_am_in = Event;
     };
 
+    struct Render_object_changed_model
+    {
+        uint32_t render_object_id{};
+        uint32_t model_handle_id{};
+
+        using I_am_in = Event;
+    };
+
     template<typename T>
     requires Is_inner_of<T, Event>
     [[nodiscard]] bool Is() const;
@@ -95,7 +103,8 @@ private:
                  Key_release,
                  Mouse_moved,
                  Mouse_scroll,
-                 Collision_occurred> data{};
+                 Collision_occurred,
+                 Render_object_changed_model> data{};
 };
 
 template<typename T>
