@@ -10,10 +10,11 @@
 #include <Eruptor/physic/hitbox.hpp>
 #include <assimp/material.h>
 #include <glm/glm.hpp>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 #include <filesystem>
 #include <unordered_map>
+
+struct FT_LibraryRec_;
+using FT_Library = FT_LibraryRec_ *;
 
 struct aiScene;
 struct aiNode;

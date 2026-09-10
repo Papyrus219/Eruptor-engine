@@ -29,12 +29,12 @@ struct Render_object
 
     //Transformation interface
     void Set_position(glm::vec3 new_position);
-    void Set_scale(glm::vec3 new_scale, std::optional<float> snap_y = {});
+    void Set_scale(glm::vec3 new_scale);
     void Set_rotation_euler(glm::vec3 new_rotation);
     void Set_rotation_quad(glm::quat new_rotation);
 
     void Move(glm::vec3 move_offset);
-    void Change_scale(glm::vec3 scale_offset, std::optional<float> snap_y = {});
+    void Change_scale(glm::vec3 scale_offset);
     void Rotate(glm::vec3 rotation_offset);
 
     [[nodiscard]] glm::vec3 Get_position() const {return transformation.Get_position();}
@@ -45,6 +45,9 @@ struct Render_object
     resource::Color color{};
     uint32_t parent_object_index{}; ///NOTE Curently not in use
     Shading_type shading_type{};
+
+    std::optional<float> snap_y{};
+
     bool is_selected{};
     bool is_active{true};
 
@@ -56,8 +59,6 @@ struct Render_object
     bool model_changed{};
 
 private:
-    void Snap_to_y(float target_y);
-
     Transformation transformation{};
     resource::Model_handle model_handle{};
 

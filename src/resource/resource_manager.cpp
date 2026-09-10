@@ -2,6 +2,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <Eruptor/resource/stb_image.h>
 #include <Eruptor/hardware/resources/resource_manager.hpp>
 #include <Eruptor/event/event_manager.hpp>

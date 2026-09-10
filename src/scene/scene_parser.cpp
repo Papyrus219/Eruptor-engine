@@ -434,7 +434,8 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             auto scale = Parse_3_numbers( line.substr(colon_pos + 1) );
             if(scale)
             {
-                scene.render_objects.back().Set_scale( *scale, scene.render_objects.back().Get_position().y );
+                scene.render_objects.back().snap_y = scene.render_objects.back().Get_position().y;
+                scene.render_objects.back().Set_scale( *scale );
             }
             else
             {

@@ -39,14 +39,9 @@ void eruptor::scene::Render_object::Set_position(glm::vec3 new_position)
     reset_last_hitbox = true;
 }
 
-void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale, std::optional<float> snap_y)
+void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale)
 {
     transformation.Set_scale( new_scale );
-
-    if(snap_y)
-    {
-        Snap_to_y(*snap_y);
-    }
 
     aabb_has_changed = true;
     hitbox_has_changed = true;
@@ -77,14 +72,9 @@ void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
     hitbox_has_changed = true;
 }
 
-void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset, std::optional<float> snap_y)
+void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset)
 {
     transformation.Set_scale( transformation.Get_scale() + scale_offset );
-
-    if(snap_y)
-    {
-        Snap_to_y(*snap_y);
-    }
 
     aabb_has_changed = true;
     hitbox_has_changed = true;
@@ -98,15 +88,3 @@ void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
     aabb_has_changed = true;
     hitbox_has_changed = true;
 }
-
-void eruptor::scene::Render_object::Snap_to_y(float target_y)
-{
-    physic::AABB aabb = Get_aabb();
-    glm::vec3 pos = transformation.Get_position();
-    pos.y += target_y - aabb.min.y;
-    transformation.Set_position( pos );
-
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
-}
-

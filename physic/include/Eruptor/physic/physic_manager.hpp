@@ -28,12 +28,16 @@ public:
     Physic_manager();
     void Init(resource::Resource_manager & resource_manager_);
 
-    void Chceck_colisions(scene::Scene & scene, float delta_time);
+    void Update_scene(scene::Scene & scene, float delta_time);
 
     void On_event(const event::Event & event) override;
 
-    void Add_hitbox(uint32_t render_id, uint8_t layer);
+    void Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene);
+
 private:
+    void Snap_y(scene::Scene & scene);
+    void Chceck_colisions(scene::Scene & scene, float delta_time);
+
     std::array<std::vector<Hitbox_metadata>, 8>  hitboxes_data{};
 
     class Colision_visitor

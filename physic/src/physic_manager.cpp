@@ -13,6 +13,39 @@ void eruptor::physic::Physic_manager::Init(resource::Resource_manager & resource
     this->resource_manager = &resource_manager_;
 }
 
+void eruptor::physic::Physic_manager::Update_scene(scene::Scene & scene, float delta_time)
+{
+    Snap_y(scene);
+
+    Chceck_colisions(scene, delta_time);
+}
+
+void eruptor::physic::Physic_manager::Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene)
+{
+    ///@todo Finish adding hitbox api
+    hitboxes_data[layer].emplace_back();
+   // hitboxes_data[layer].back().Set_model( scene.render_objects[ render_id ]. );
+
+}
+
+void eruptor::physic::Physic_manager::Snap_y(scene::Scene & scene)
+{
+    for(auto & hitbox_data : hitboxes_data[0])
+    {
+        auto & render_object = scene.render_objects[ hitbox_data.Get_render_object_id() ];
+        if(render_object.snap_y)
+        {
+            physic::AABB aabb = hitbox_data.Get_aabb(scene);
+            glm::vec3 pos = render_object.Get_position();
+            pos.y += render_object.snap_y.value() - aabb.min.y;
+            render_object.Set_position( pos );
+
+            render_object.aabb_has_changed = true;
+            render_object.hitbox_has_changed = true;
+        }
+    }
+}
+
 void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, float delta_time)
 {
     can_coliding.clear();
