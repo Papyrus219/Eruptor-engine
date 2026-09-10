@@ -24,7 +24,7 @@ public:
 
 private:
     std::string_view Get_string_from_file_version(File_version file_version);
-    std::string_view Get_string_from_hitbox_type(resource::Hitbox_type hitbox_type);
+    std::string_view Get_string_from_hitbox_type(physic::Hitbox_type hitbox_type);
 
     resource::Resource_manager * resource_manager{};
 

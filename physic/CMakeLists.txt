@@ -4,7 +4,9 @@ find_package(glm REQUIRED)
 
 set(PHYSIC_SRC ${CMAKE_CURRENT_LIST_DIR}/src/hitbox_metadata.cpp
                ${CMAKE_CURRENT_LIST_DIR}/src/hitbox.cpp
-               ${CMAKE_CURRENT_LIST_DIR}/src/physic_manager.cpp)
+               ${CMAKE_CURRENT_LIST_DIR}/src/physic_manager.cpp
+               ${CMAKE_CURRENT_LIST_DIR}/src/colision_visitor.cpp
+               ${CMAKE_CURRENT_LIST_DIR}/src/hitbox_calculator.cpp)
 
 Make_library(TARGET eruptor_physic
 SOURCES PHYSIC_SRC

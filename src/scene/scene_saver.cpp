@@ -80,15 +80,15 @@ std::string_view eruptor::scene::Scene_saver::Get_string_from_file_version(File_
     return "";
 }
 
-std::string_view eruptor::scene::Scene_saver::Get_string_from_hitbox_type(resource::Hitbox_type hitbox_type)
+std::string_view eruptor::scene::Scene_saver::Get_string_from_hitbox_type(physic::Hitbox_type hitbox_type)
 {
     switch(hitbox_type)
     {
-        case resource::Hitbox_type::OBB:
+        case physic::Hitbox_type::OBB:
             return "OBB";
-        case resource::Hitbox_type::SPHERE:
+        case physic::Hitbox_type::SPHERE:
             return "SPHERE";
-        case resource::Hitbox_type::CAPSULE:
+        case physic::Hitbox_type::CAPSULE:
             return "CAPSULE";
     }
 

@@ -1,10 +1,10 @@
 #include <Eruptor/physic/hitbox_metadata.hpp>
-#include <Eruptor/resource_manager.hpp>
+#include <Eruptor/physic_manager.hpp>
 
-void eruptor::physic::Hitbox_metadata::Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle)
+void eruptor::physic::Hitbox_metadata::Set_model(Physic_manager & physic_manager, uint32_t model_resource_id)
 {
-    model_hitbox = resource_manager.Get_model_hitbox( model_handle );
-    model_aabb = resource_manager.Get_model_aabb( model_handle );
+    model_hitbox = physic_manager.Get_model_hitbox( model_resource_id );
+    model_aabb = physic_manager.Get_model_aabb( model_resource_id );
 }
 
 const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::Scene & scene)
@@ -78,7 +78,7 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
         model *= glm::mat4_cast(rotation);
         model = glm::scale(model, scale);
 
-        if(type == resource::Hitbox_type::SPHERE)
+        if(type == physic::Hitbox_type::SPHERE)
         {
             auto new_sphere = std::get<physic::Sphere_hitbox>(model_hitbox) * model;
             auto & old_sphere = std::get<physic::Sphere_hitbox>(transformed_hitbox);
@@ -94,11 +94,11 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
 
             transformed_hitbox = new_sphere;
         }
-        else if(type == resource::Hitbox_type::OBB)
+        else if(type == physic::Hitbox_type::OBB)
         {
             transformed_hitbox = std::get<OBB_hitbox>(model_hitbox) * model;
         }
-        else if(type == resource::Hitbox_type::CAPSULE)
+        else if(type == physic::Hitbox_type::CAPSULE)
         {
             transformed_hitbox = std::get<Sphere_hitbox>(model_hitbox) * model;
         }

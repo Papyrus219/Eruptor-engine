@@ -14,10 +14,9 @@ void eruptor::Eruptor::Init()
 {
     hardware = std::make_unique<hardware::Hardware>();
     hardware->Init();
-    resource_manager.Init( hardware->Get_resource_manager() );
+    resource_manager.Init( hardware->Get_resource_manager(), physic_manager );
     renderer.Init(*hardware, resource_manager);
 
-    physic_manager.Init( resource_manager );
 }
 
 eruptor::Eruptor::~Eruptor()

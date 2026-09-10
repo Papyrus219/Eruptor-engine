@@ -27,6 +27,11 @@ namespace eruptor::hardware
     struct Texture_data;
 }
 
+namespace eruptor::physic
+{
+    class Physic_manager;
+}
+
 namespace eruptor::event
 {
     class Event_manager;
@@ -62,7 +67,7 @@ class Resource_manager: public eruptor::event::Event_listener
 public:
     Resource_manager();
 
-    void Init(hardware::Resource_manager & hw_resource_manager);
+    void Init(hardware::Resource_manager & hw_resource_manager, physic::Physic_manager & physic_manager);
 
     Model & Get_model(Model_handle & model_handle, bool skip_assertion = false);
     Material Get_material(Material_handle & material_handle);
@@ -70,8 +75,6 @@ public:
     Font_atlas & Get_font_atlas(Font_handle & font_handle);
 
     Model_handle Get_model_handle(std::string_view model_alias);
-    physic::AABB Get_model_aabb(Model_handle & model_handle);
-    physic::Hitbox Get_model_hitbox(Model_handle & model_handle);
     const std::filesystem::path & Get_model_path(Model_handle & model_handle) const;
 
     Font_handle Add_font_atlas(const std::filesystem::path & path, float font_size);
@@ -94,28 +97,17 @@ private:
     void Load_font_atlases();
     void Load_textures();
 
-    void Load_model(Resource<Model> & model_resource);
+    void Load_model(uint32_t id, Resource<Model> & model_resource);
     void Load_font(Font_atlas & font_atlas, const std::filesystem::path & path);
 
     void Process_node(aiNode * node, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
     void Process_mesh(aiMesh * mesh, const aiScene * scene, Model & model, const std::filesystem::path & directory, std::vector<glm::vec3> & all_vertecies);
     Resource_Texture_handle Add_material_texture(aiMaterial * mat, aiTextureType ai_type, Texture_type type, const std::filesystem::path & directory);
 
-    void Calculate_model_hitbox(Model & model, std::vector<glm::vec3> & all_vertecies);
-
-    void Calculate_sphere_hitbox(physic::Sphere_hitbox & sphere, std::vector<glm::vec3> & all_vertecies);
-    void Calculate_obb_hitbox(physic::OBB_hitbox & obb, std::vector<glm::vec3> & all_vertecies);
-    void Calculate_capsule_hitbox(physic::Capsule_hitbox & capsule, std::vector<glm::vec3> & all_vertecies);
-
-    glm::mat3 Compute_covariance(const std::vector<glm::vec3> & all_vertecies, glm::vec3 & centroid);
-    glm::mat3 Jacobi_eigenvectors(glm::mat3 & cov, size_t iterations = 20);
-
     std::vector< Resource<Model> > models{};
     std::vector< Resource<Font_atlas> > fonts_atlases{};
     std::vector< Resource<Texture> > textures{};
 
-    std::vector<physic::AABB> models_AABB{};
-    std::vector<physic::Hitbox> models_hitboxes{};
     std::vector<Material> materials{};
     std::vector<Mesh_handle> mesh_handles{};
 
@@ -125,6 +117,7 @@ private:
 
     event::Event_manager & event_manager;
     hardware::Resource_manager * hw_resource_manager{};
+    physic::Physic_manager * physic_manager{};
 };
 
 }

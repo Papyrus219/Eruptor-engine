@@ -3,22 +3,20 @@
 
 #include <Eruptor/scene/scene.hpp>
 #include <Eruptor/physic/hitbox.hpp>
+#include <Eruptor/physic/hitbox_type.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <optional>
 #include <cstdint>
 
-namespace eruptor::resource
-{
-    class Resource_manager;
-}
-
 namespace eruptor::physic
 {
 
+class Physic_manager;
+
 struct Hitbox_metadata
 {
-    void Set_model(resource::Resource_manager & resource_manager, resource::Model_handle model_handle);
+    void Set_model(Physic_manager & physic_manager, uint32_t model_resource_id);
 
     const AABB & Get_aabb(scene::Scene & scene);
     const Hitbox & Get_hitbox(scene::Scene & scene);
@@ -33,11 +31,11 @@ private:
     std::optional<glm::quat> rotation{};
     std::optional<glm::vec3> scale{};
 
-    physic::AABB model_aabb{};
-    physic::AABB transformed_aabb{};
-    physic::AABB last_aabb{};
+    AABB model_aabb{};
+    AABB transformed_aabb{};
+    AABB last_aabb{};
 
-    resource::Hitbox_type type{};
+    Hitbox_type type{};
     Hitbox model_hitbox{};
     Hitbox transformed_hitbox{};
 };

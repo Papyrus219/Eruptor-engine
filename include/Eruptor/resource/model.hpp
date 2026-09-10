@@ -2,22 +2,16 @@
 #define ERUPTOR_RESOURCE_MODEL_HPP
 
 #include <Eruptor/resource/resource_handle.hpp>
+#include <Eruptor/physic/hitbox_type.hpp>
 #include <filesystem>
 #include <vector>
 
 namespace eruptor::resource
 {
 
-enum class Hitbox_type
-{
-    OBB,
-    SPHERE,
-    CAPSULE,
-};
-
 struct Model
 {
-    Hitbox_type hitbox_type{};
+    physic::Hitbox_type hitbox_type{};
     std::vector<Mesh_handle> Meshes_handles{};
     std::vector<Material_handle> materials_handles{};
 };

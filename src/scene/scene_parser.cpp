@@ -233,15 +233,15 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
             auto hitbox_type = line.substr(type_start);
             if(hitbox_type == "OBB")
             {
-                current_parsed_model->hitbox_type = resource::Hitbox_type::OBB;
+                current_parsed_model->hitbox_type = physic::Hitbox_type::OBB;
             }
             else if(hitbox_type == "SPHERE")
             {
-                current_parsed_model->hitbox_type = resource::Hitbox_type::SPHERE;
+                current_parsed_model->hitbox_type = physic::Hitbox_type::SPHERE;
             }
             else if(hitbox_type == "CAPSULE")
             {
-                current_parsed_model->hitbox_type = resource::Hitbox_type::CAPSULE;
+                current_parsed_model->hitbox_type = physic::Hitbox_type::CAPSULE;
             }
             else
             {

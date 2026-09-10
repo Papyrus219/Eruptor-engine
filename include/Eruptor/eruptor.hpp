@@ -4,7 +4,7 @@
 #include <Eruptor/renderer.hpp>
 #include <Eruptor/resource_manager.hpp>
 #include <Eruptor/hardware/window.hpp>
-#include <Eruptor/physic/physic_manager.hpp>
+#include <Eruptor/physic_manager.hpp>
 #include <memory>
 
 namespace eruptor
