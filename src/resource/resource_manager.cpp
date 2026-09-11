@@ -39,6 +39,8 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
         throw std::runtime_error{"Failed to init FreeType."};
     }
 
+    scene_parser.Assign_resource_manager(*this);
+
     event_manager.Add_listener( *this );
 }
 
@@ -490,6 +492,11 @@ eruptor::resource::Resource_Texture_handle eruptor::resource::Resource_manager::
 }
 
 void eruptor::resource::Resource_manager::On_event([[maybe_unused]] const event::Event & event)
+{
+
+}
+
+eruptor::resource::Resource_manager::~Resource_manager()
 {
 
 }

@@ -1,6 +1,7 @@
 #ifndef ERUPTOR_RESOURCE_RESOURCE_MANAGER_HPP
 #define ERUPTOR_RESOURCE_RESOURCE_MANAGER_HPP
 
+#include <Eruptor/resource/scene_parser.hpp>
 #include <Eruptor/resource/resource.hpp>
 #include <Eruptor/resource/model.hpp>
 #include <Eruptor/resource/material.hpp>
@@ -91,6 +92,10 @@ public:
     void On_event(const event::Event & event) override;
 
     std::filesystem::path texture_dirr_path{};
+
+    Scene_parser scene_parser{};
+
+    virtual ~Resource_manager() override;
 
 private:
     void Load_models();

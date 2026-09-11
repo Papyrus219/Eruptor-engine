@@ -16,13 +16,20 @@ class Physic_manager;
 
 struct Hitbox_metadata
 {
+    void Set_render_object_id(uint32_t render_object_id);
     void Set_model(Physic_manager & physic_manager, uint32_t model_resource_id);
 
-    const AABB & Get_aabb(scene::Scene & scene);
-    const Hitbox & Get_hitbox(scene::Scene & scene);
-    eruptor::physic::AABB Get_swept_aabb(scene::Scene & scene);
+    void Set_individual_position(glm::vec3 position);
+    void Set_individual_rotation(glm::quat rotation);
+    void Set_individual_scale(glm::vec3 scale);
 
     uint32_t Get_render_object_id() const {return this->render_object_id;}
+
+    const Hitbox & Get_hitbox(scene::Scene & scene);
+    Hitbox_type Get_hitbox_type() {return type;}
+
+    const AABB & Get_aabb(scene::Scene & scene);
+    AABB Get_swept_aabb(scene::Scene & scene);
 
 private:
     uint32_t render_object_id{};

@@ -1,8 +1,7 @@
-#ifndef ERUPTOR_SCENE_SCENE_PARSER_HPP
-#define ERUPTOR_SCENE_SCENE_PARSER_HPP
+#ifndef ERUPTOR_RESOURCE_SCENE_PARSER_HPP
+#define ERUPTOR_RESOURCE_SCENE_PARSER_HPP
 
 #include <Eruptor/scene/scene.hpp>
-#include <Eruptor/resource_manager.hpp>
 #include <Eruptor/resource/resource_handle.hpp>
 #include <filesystem>
 #include <unordered_map>
@@ -10,21 +9,23 @@
 #include <string_view>
 #include <expected>
 
-namespace eruptor::scene
+namespace eruptor::resource
 {
+
+class Resource_manager;
 
 class Scene_parser
 {
 public:
-    void Assign_resource_manager(resource::Resource_manager & resource_manager) {this->resource_manager = &resource_manager;}
-    std::expected<Scene, std::string_view> Load_scene(const std::filesystem::path & scene_path);
+    void Assign_resource_manager(Resource_manager & resource_manager) {this->resource_manager = &resource_manager;}
+    std::expected<scene::Scene, std::string_view> Load_scene(const std::filesystem::path & scene_path);
 
 private:
     void Load_file_to_buffor(const std::filesystem::path & scene_path);
-    void Parse_line(std::string_view line, Scene & scene);
+    void Parse_line(std::string_view line, scene::Scene & scene);
     std::expected<glm::vec3, std::string_view>  Parse_3_numbers(std::string_view numbers);
 
-    resource::Resource_manager * resource_manager{};
+    Resource_manager * resource_manager{};
     resource::Model * current_parsed_model{};
 
     std::unordered_map<std::string_view, std::pair<std::string_view, resource::Model_handle>> model_variables{};
@@ -64,4 +65,4 @@ private:
 
 }
 
-#endif // ERUPTOR_SCENE_SCENE_PARSER_HPP
+#endif // ERUPTOR_RESOURCE_SCENE_PARSER_HPP

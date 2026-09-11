@@ -1,10 +1,30 @@
 #include <Eruptor/physic/hitbox_metadata.hpp>
 #include <Eruptor/physic_manager.hpp>
 
+void eruptor::physic::Hitbox_metadata::Set_render_object_id(uint32_t render_object_id)
+{
+    this->render_object_id = render_object_id;
+}
+
 void eruptor::physic::Hitbox_metadata::Set_model(Physic_manager & physic_manager, uint32_t model_resource_id)
 {
     model_hitbox = physic_manager.Get_model_hitbox( model_resource_id );
     model_aabb = physic_manager.Get_model_aabb( model_resource_id );
+}
+
+void eruptor::physic::Hitbox_metadata::Set_individual_position(glm::vec3 position)
+{
+    this->position = position;
+}
+
+void eruptor::physic::Hitbox_metadata::Set_individual_rotation(glm::quat rotation)
+{
+    this->rotation = rotation;
+}
+
+void eruptor::physic::Hitbox_metadata::Set_individual_scale(glm::vec3 scale)
+{
+    this->scale = scale;
 }
 
 const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::Scene & scene)

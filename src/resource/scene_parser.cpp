@@ -1,4 +1,5 @@
-#include <Eruptor/scene/scene_parser.hpp>
+#include <Eruptor/resource/scene_parser.hpp>
+#include <Eruptor/resource_manager.hpp>
 #include <Eruptor/resource/colors.hpp>
 #include <fstream>
 #include <iostream>
@@ -10,16 +11,16 @@ constexpr bool Debug_mode = true;
 constexpr bool Debug_mode = false;
 #endif
 
-const std::string eruptor::scene::Scene_parser::error_file_load{"Scene parser: Failed to load file!"};
-const std::string eruptor::scene::Scene_parser::error_text_parsing{"Scene parser: Failed to parse text correctly!"};
-const std::string eruptor::scene::Scene_parser::error_numbers_parsing{"Scene parser: Failed to parse numbers correctly!"};
+const std::string eruptor::resource::Scene_parser::error_file_load{"Scene parser: Failed to load file!"};
+const std::string eruptor::resource::Scene_parser::error_text_parsing{"Scene parser: Failed to parse text correctly!"};
+const std::string eruptor::resource::Scene_parser::error_numbers_parsing{"Scene parser: Failed to parse numbers correctly!"};
 
-std::expected<eruptor::scene::Scene, std::string_view> eruptor::scene::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
+std::expected<eruptor::scene::Scene, std::string_view> eruptor::resource::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
 {
     Load_file_to_buffor(scene_path);
     if(error_happen) return std::unexpected{error_message};
 
-    Scene scene{};
+    scene::Scene scene{};
 
     std::string_view buffer_view = buffor;
     size_t pos{};
@@ -70,7 +71,7 @@ std::expected<eruptor::scene::Scene, std::string_view> eruptor::scene::Scene_par
     return scene;
 }
 
-void eruptor::scene::Scene_parser::Load_file_to_buffor(const std::filesystem::path & scene_path)
+void eruptor::resource::Scene_parser::Load_file_to_buffor(const std::filesystem::path & scene_path)
 {
     std::ifstream file{scene_path};
     if(!file)
@@ -93,7 +94,7 @@ void eruptor::scene::Scene_parser::Load_file_to_buffor(const std::filesystem::pa
     line_count = 0;
 }
 
-void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & scene)
+void eruptor::resource::Scene_parser::Parse_line(std::string_view line, scene::Scene & scene)
 {
     if(!line.empty() && line.back() == '\r')
     {
@@ -499,7 +500,7 @@ void eruptor::scene::Scene_parser::Parse_line(std::string_view line, Scene & sce
     }
 }
 
-std::expected<glm::vec3, std::string_view> eruptor::scene::Scene_parser::Parse_3_numbers(std::string_view numbers)
+std::expected<glm::vec3, std::string_view> eruptor::resource::Scene_parser::Parse_3_numbers(std::string_view numbers)
 {
     glm::vec3 result{};
     float * numbers_ptrs[3] {&result.x, &result.y, &result.z};

@@ -19,6 +19,7 @@ void eruptor::physic::Physic_manager::Add_hitbox(uint8_t layer, uint32_t render_
 {
     ///@todo Finish adding hitbox api
     hitboxes_data[layer].emplace_back();
+    hitboxes_data[layer].back().Set_render_object_id( render_id );
     hitboxes_data[layer].back().Set_model( *this, scene.render_objects[ render_id ].Get_model_handle().Get_id() );
 
 }
