@@ -8,8 +8,10 @@ void eruptor::physic::Hitbox_metadata::Set_render_object_id(uint32_t render_obje
 
 void eruptor::physic::Hitbox_metadata::Set_model(Physic_manager & physic_manager, uint32_t model_resource_id)
 {
-    model_hitbox = physic_manager.Get_model_hitbox( model_resource_id );
     model_aabb = physic_manager.Get_model_aabb( model_resource_id );
+    type = physic_manager.Get_model_hitbox_type( model_resource_id );
+    model_hitbox = physic_manager.Get_model_hitbox( model_resource_id );
+    transformed_hitbox = model_hitbox;
 }
 
 void eruptor::physic::Hitbox_metadata::Set_individual_position(glm::vec3 position)
@@ -29,7 +31,7 @@ void eruptor::physic::Hitbox_metadata::Set_individual_scale(glm::vec3 scale)
 
 const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::Scene & scene)
 {
-    auto render_object = scene.render_objects[ this->render_object_id ];
+    auto & render_object = scene.render_objects[ this->render_object_id ];
 
     if(render_object.aabb_has_changed)
     {
@@ -59,7 +61,7 @@ const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::
 
         transformed_aabb = {glm::vec3{std::numeric_limits<float>::max()}, glm::vec3{std::numeric_limits<float>::lowest()}};
 
-        for(auto& corner : corners)
+        for(auto & corner : corners)
         {
             glm::vec3 transformed = glm::vec3(model * glm::vec4(corner, 1.0f));
 
@@ -85,7 +87,7 @@ const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::
 
 const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(scene::Scene & scene)
 {
-    auto render_object = scene.render_objects[ this->render_object_id ];
+    auto & render_object = scene.render_objects[ this->render_object_id ];
 
     if(render_object.hitbox_has_changed)
     {

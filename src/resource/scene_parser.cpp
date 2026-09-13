@@ -1,6 +1,7 @@
 #include <Eruptor/resource/scene_parser.hpp>
 #include <Eruptor/resource_manager.hpp>
 #include <Eruptor/resource/colors.hpp>
+#include <Eruptor/physic_manager.hpp>
 #include <fstream>
 #include <iostream>
 #include <print>
@@ -14,6 +15,13 @@ constexpr bool Debug_mode = false;
 const std::string eruptor::resource::Scene_parser::error_file_load{"Scene parser: Failed to load file!"};
 const std::string eruptor::resource::Scene_parser::error_text_parsing{"Scene parser: Failed to parse text correctly!"};
 const std::string eruptor::resource::Scene_parser::error_numbers_parsing{"Scene parser: Failed to parse numbers correctly!"};
+
+void eruptor::resource::Scene_parser::Assign_resource_manager(Resource_manager& resource_manager)
+{
+    this->resource_manager = &resource_manager;
+    this->physic_manager = &resource_manager.Get_assigned_physic_manager();
+}
+
 
 std::expected<eruptor::scene::Scene, std::string_view> eruptor::resource::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
 {
@@ -334,6 +342,8 @@ void eruptor::resource::Scene_parser::Parse_line(std::string_view line, scene::S
                 return;
             }
 
+            physic_manager->Add_hitbox(0, scene.render_objects.size() - 1, scene);
+            ///@todo When you return please add hitbox creation here. Thank you in advance.
             scene.render_objects.back().Set_model(scene.render_objects.size() - 1, model_variables[model_variable_name].second);
 
             line_mode = Line_mode::OBJECT_POSITION;

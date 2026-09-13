@@ -5,6 +5,7 @@
 #include <Eruptor/physic/colision_visitor.hpp>
 #include <Eruptor/physic/hitbox_calculator.hpp>
 #include <Eruptor/physic/hitbox_metadata.hpp>
+#include <Eruptor/physic/can_colide_info.hpp>
 #include <vector>
 #include <unordered_map>
 
@@ -25,6 +26,8 @@ class Physic_manager: public event::Event_listener
 public:
     Physic_manager();
 
+    ///@todo ADD HITBOX_TYPE IN SET HITBOX IN HITBOX METADATA
+
     void Update_scene(scene::Scene & scene, float delta_time);
 
     void On_event(const event::Event & event) override;
@@ -32,22 +35,30 @@ public:
     void Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene);
     void Add_model_hitbox(uint32_t model_resource_id, physic::Hitbox_type hitbox_type, std::vector<glm::vec3> & all_vertecies);
 
+    Hitbox_metadata & Get_hitbox_data(uint8_t layer, uint32_t render_id);
+
     AABB Get_model_aabb(uint32_t model_resource_id) {return model_aabbs.at(model_resource_id);}
     Hitbox Get_model_hitbox(uint32_t model_resource_id) {return model_hitboxes.at(model_resource_id);}
+    Hitbox_type Get_model_hitbox_type(uint32_t model_resource_id) {return model_hitboxes_types.at(model_resource_id);}
 
 private:
     void Snap_y(scene::Scene & scene);
     void Chceck_colisions(scene::Scene & scene, float delta_time);
 
-    std::array<std::vector<Hitbox_metadata>, 8>  hitboxes_data{};
+    static constexpr uint8_t LAYERS_AMOUNT{8};
 
-    std::unordered_map<uint32_t, Hitbox> model_hitboxes{};
+    std::array<std::vector<Hitbox_metadata>, LAYERS_AMOUNT>  hitboxes_data{};
+    std::array<std::vector<AABB>, LAYERS_AMOUNT> sweep_aabbs{};
+
     std::unordered_map<uint32_t, AABB> model_aabbs{};
+    std::unordered_map<uint32_t, Hitbox> model_hitboxes{};
+    std::unordered_map<uint32_t, Hitbox_type> model_hitboxes_types{};
 
     Colision_visitor colision_visitor{};
     Hitbox_calculator hitbox_calculator{};
 
-    std::vector< std::pair<uint32_t, uint32_t> > can_coliding{};
+    std::vector< Can_colide_info > can_coliding{};
+    size_t last_can_coliding_size{};
 
     event::Event_manager & event_manager;
 };

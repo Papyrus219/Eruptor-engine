@@ -9,6 +9,11 @@
 #include <string_view>
 #include <expected>
 
+namespace eruptor::physic
+{
+    class Physic_manager;
+}
+
 namespace eruptor::resource
 {
 
@@ -17,7 +22,7 @@ class Resource_manager;
 class Scene_parser
 {
 public:
-    void Assign_resource_manager(Resource_manager & resource_manager) {this->resource_manager = &resource_manager;}
+    void Assign_resource_manager(Resource_manager & resource_manager);
     std::expected<scene::Scene, std::string_view> Load_scene(const std::filesystem::path & scene_path);
 
 private:
@@ -26,6 +31,8 @@ private:
     std::expected<glm::vec3, std::string_view>  Parse_3_numbers(std::string_view numbers);
 
     Resource_manager * resource_manager{};
+    physic::Physic_manager * physic_manager{};
+
     resource::Model * current_parsed_model{};
 
     std::unordered_map<std::string_view, std::pair<std::string_view, resource::Model_handle>> model_variables{};

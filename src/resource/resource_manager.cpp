@@ -44,6 +44,11 @@ void eruptor::resource::Resource_manager::Init(hardware::Resource_manager & hw_r
     event_manager.Add_listener( *this );
 }
 
+eruptor::physic::Physic_manager & eruptor::resource::Resource_manager::Get_assigned_physic_manager()
+{
+    return *physic_manager;
+}
+
 eruptor::resource::Model & eruptor::resource::Resource_manager::Get_model(Model_handle & model_handle, bool skip_assertion)
 {
     #ifndef NDEBUG

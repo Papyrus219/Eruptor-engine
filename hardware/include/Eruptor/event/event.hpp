@@ -74,8 +74,11 @@ public:
 
     struct Collision_occurred
     {
-        uint32_t object_a_id;
-        uint32_t object_b_id;
+        uint32_t object_a_id{};
+        uint32_t object_b_id{};
+
+        uint8_t object_a_layer{};
+        uint8_t object_b_layer{};
 
         using I_am_in = Event;
     };

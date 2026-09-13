@@ -70,6 +70,8 @@ public:
 
     void Init(hardware::Resource_manager & hw_resource_manager, physic::Physic_manager & physic_manager);
 
+    physic::Physic_manager & Get_assigned_physic_manager();
+
     Model & Get_model(Model_handle & model_handle, bool skip_assertion = false);
     Material Get_material(Material_handle & material_handle);
     Texture Get_texture(Resource_Texture_handle & texture_handle);
