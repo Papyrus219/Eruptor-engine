@@ -44,7 +44,7 @@ std::expected<void, std::string_view> eruptor::scene::Scene_saver::Save_scene_da
         std::println(file, "Model: {}", resource_manager->Get_model_alias( render_object.Get_model_handle() ));
         std::println(file, "Position: {} {} {}", render_object.Get_position().x, render_object.Get_position().y, render_object.Get_position().z);
 
-        glm::vec3 e = glm::eulerAngles(render_object.Get_rotaion());
+        glm::vec3 e = glm::eulerAngles(render_object.Get_rotation());
         if(std::abs(std::abs(e.x) - glm::pi<float>()) < 0.01f && std::abs(std::abs(e.z) - glm::pi<float>()) < 0.01f)
         {
             e.x = 0.0f;
@@ -80,15 +80,15 @@ std::string_view eruptor::scene::Scene_saver::Get_string_from_file_version(File_
     return "";
 }
 
-std::string_view eruptor::scene::Scene_saver::Get_string_from_hitbox_type(resource::Hitbox_type hitbox_type)
+std::string_view eruptor::scene::Scene_saver::Get_string_from_hitbox_type(physic::Hitbox_type hitbox_type)
 {
     switch(hitbox_type)
     {
-        case resource::Hitbox_type::OBB:
+        case physic::Hitbox_type::OBB:
             return "OBB";
-        case resource::Hitbox_type::SPHERE:
+        case physic::Hitbox_type::SPHERE:
             return "SPHERE";
-        case resource::Hitbox_type::CAPSULE:
+        case physic::Hitbox_type::CAPSULE:
             return "CAPSULE";
     }
 

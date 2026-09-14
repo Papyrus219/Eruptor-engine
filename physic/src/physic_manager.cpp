@@ -1,264 +1,169 @@
-#include <Eruptor/physic/physic_manager.hpp>
+#include <Eruptor/physic_manager.hpp>
 #include <Eruptor/scene/scene.hpp>
 #include <Eruptor/event/event_manager.hpp>
+#include <Eruptor/resource_manager.hpp>
+#include <ranges>
 
 eruptor::physic::Physic_manager::Physic_manager(): event_manager{ event::event_manager }
 {
     event_manager.Add_listener( *this );
 }
 
+void eruptor::physic::Physic_manager::Update_scene(scene::Scene & scene, float delta_time)
+{
+    Snap_y(scene);
+
+    Chceck_colisions(scene, delta_time);
+}
+
+eruptor::physic::Hitbox_metadata & eruptor::physic::Physic_manager::Get_hitbox_data(uint8_t layer, uint32_t render_id)
+{
+    auto result = std::find_if(hitboxes_data[layer].begin(), hitboxes_data[layer].end(), [render_id](auto & hitbox_data)
+                                                                            {return hitbox_data.Get_render_object_id() == render_id;}) ;
+
+    if(result == hitboxes_data[layer].end())
+    {
+        throw std::runtime_error{"ERUPTOR::PHYSIC::No  hitbox with this id registered!"};
+    }
+
+    return *result;
+}
+
+void eruptor::physic::Physic_manager::Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene)
+{
+    hitboxes_data[layer].emplace_back();
+    hitboxes_data[layer].back().Set_render_object_id( render_id );
+    hitboxes_data[layer].back().Set_model( *this, scene.render_objects[ render_id ].Get_model_handle().Get_id() );
+}
+
+void eruptor::physic::Physic_manager::Add_model_hitbox(uint32_t model_resource_id, physic::Hitbox_type hitbox_type, std::vector<glm::vec3>& all_vertecies)
+{
+    physic::AABB aabb{glm::vec3{std::numeric_limits<float>::max()}, glm::vec3{std::numeric_limits<float>::lowest()}};
+    physic::Hitbox hitbox{};
+
+    for(const auto & vert : all_vertecies)
+    {
+        aabb.min = glm::min(vert, aabb.min);
+        aabb.max = glm::max(vert, aabb.max);
+    }
+
+    if(hitbox_type == physic::Hitbox_type::OBB)
+    {
+        physic::OBB_hitbox oob_hitbox{};
+
+        hitbox_calculator.Calculate_obb_hitbox(oob_hitbox, all_vertecies);
+
+        hitbox = oob_hitbox;
+    }
+    else if(hitbox_type == physic::Hitbox_type::SPHERE)
+    {
+        physic::Sphere_hitbox sphere_hitbox{};
+
+        hitbox_calculator.Calculate_sphere_hitbox(sphere_hitbox, all_vertecies);
+
+        hitbox = sphere_hitbox;
+    }
+    else if(hitbox_type ==  physic::Hitbox_type::CAPSULE)
+    {
+        physic::Capsule_hitbox capsule_hitbox{};
+
+        hitbox_calculator.Calculate_capsule_hitbox(capsule_hitbox, all_vertecies);
+
+        hitbox = capsule_hitbox;
+    }
+
+    model_aabbs[model_resource_id] = aabb;
+    model_hitboxes[model_resource_id] = hitbox;
+    model_hitboxes_types[model_resource_id] = hitbox_type;
+}
+
+void eruptor::physic::Physic_manager::Snap_y(scene::Scene & scene)
+{
+    for(auto & hitbox_data : hitboxes_data[0])
+    {
+        auto & render_object = scene.render_objects[ hitbox_data.Get_render_object_id() ];
+        if(render_object.snap_y)
+        {
+            physic::AABB aabb = hitbox_data.Get_aabb(scene);
+            glm::vec3 pos = render_object.Get_position();
+            pos.y += render_object.snap_y.value() - aabb.min.y;
+            render_object.Set_position( pos );
+
+            render_object.aabb_has_changed = true;
+            render_object.hitbox_has_changed = true;
+        }
+    }
+}
+
 void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, float delta_time)
 {
     can_coliding.clear();
+    can_coliding.reserve( last_can_coliding_size );
 
-    for(auto i{1UZ}; i < scene.render_objects.size(); i++)
+    for(auto i{0UZ}; i < hitboxes_data.size(); i++)
     {
-        for(auto j{i + 1}; j < scene.render_objects.size(); j++)
+        sweep_aabbs[i].clear();
+        sweep_aabbs[i].reserve(hitboxes_data[i].size());
+
+        for(auto j{0UZ}; j < hitboxes_data[i].size(); j++)
         {
-            auto aabb_a = scene.render_objects[i].Get_swept_aabb();
-            auto aabb_b = scene.render_objects[j].Get_swept_aabb();
+            sweep_aabbs[i].push_back( hitboxes_data[i][j].Get_swept_aabb(scene) );
+        }
+    }
 
-            bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
-            bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
-            bool z_colision = aabb_a.max.z > aabb_b.min.z && aabb_a.min.z < aabb_b.max.z;
-
-            if(x_colision && y_colision && z_colision)
+    for(uint8_t a{}; a < LAYERS_AMOUNT; a++)
+    {
+        for(uint32_t i{1}; i < hitboxes_data[a].size(); i++)
+        {
+            for(uint8_t b{a}; b < LAYERS_AMOUNT; b++)
             {
-                can_coliding.push_back( {i, j} );
+                for(uint32_t j = ((a == b)? i+1 : 0) ; j < hitboxes_data[b].size(); j++)
+                {
+                    auto aabb_a = sweep_aabbs[a][i];
+                    auto aabb_b = sweep_aabbs[b][j];
+
+                    bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
+                    bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
+                    bool z_colision = aabb_a.max.z > aabb_b.min.z && aabb_a.min.z < aabb_b.max.z;
+
+                    if(x_colision && y_colision && z_colision)
+                    {
+                        can_coliding.push_back( {.hitbox_a_id = i, .hitbox_b_id = j, .hitbox_a_layer = a, .hitbox_b_layer = b} );
+                    }
+                }
             }
         }
     }
+
+    last_can_coliding_size = can_coliding.size();
 
     colision_visitor.delta_time = delta_time;
 
     for(auto i{0UZ}; i < can_coliding.size(); i++)
     {
-        if( std::visit(colision_visitor, scene.render_objects[ can_coliding[i].first ].Get_hitbox(), scene.render_objects[ can_coliding[i].second ].Get_hitbox()) )
+        if( std::visit(colision_visitor, hitboxes_data[can_coliding[i].hitbox_a_layer][can_coliding[i].hitbox_a_id].Get_hitbox(scene), hitboxes_data[can_coliding[i].hitbox_b_layer][can_coliding[i].hitbox_b_id].Get_hitbox(scene)) )
         {
             event::Event::Collision_occurred colision{};
-            colision.object_a_id = can_coliding[i].first;
-            colision.object_b_id = can_coliding[i].second;
+            colision.object_a_id = hitboxes_data[can_coliding[i].hitbox_a_layer][can_coliding[i].hitbox_a_id].Get_render_object_id();
+            colision.object_b_id = hitboxes_data[can_coliding[i].hitbox_b_layer][can_coliding[i].hitbox_b_id].Get_render_object_id();
+            colision.object_a_layer = can_coliding[i].hitbox_a_layer;
+            colision.object_b_layer = can_coliding[i].hitbox_b_layer;
 
             event_manager.Announce_event( colision );
         }
     }
 }
 
-bool eruptor::physic::Physic_manager::Colision_visitor::Sphere_vs_sphere_test(const Sphere_hitbox& a, const Sphere_hitbox& b) const
+void eruptor::physic::Physic_manager::On_event(const event::Event & event)
 {
-    glm::vec3 pos = a.last_center - b.last_center;
-
-    glm::vec3 movement_a = a.center - a.last_center;
-    glm::vec3 movement_b = b.center - b.last_center;
-
-    glm::vec3 v = movement_a - movement_b;
-
-    float radius = a.radius + b.radius;
-
-    if(glm::dot(pos, pos) <= radius * radius)
+    if(auto model_change = event.Get_if<event::Event::Render_object_changed_model>())
     {
-        return true;
-    }
-
-    float A = glm::dot(v,v);
-    if(A <= 0.000001f)
-    {
-        return false;
-    }
-
-    float B = 2.0f * glm::dot(pos, v);
-    float C = glm::dot(pos, pos) - radius * radius;
-
-    float discriminant = B * B - 4.0f * A * C;
-
-    if(discriminant < 0.0f)
-    {
-        return false;
-    }
-
-    float sqrt_d = std::sqrt(discriminant);
-
-    float t0 = (-B - sqrt_d) / (2.0f * A);
-    float t1 = (-B + sqrt_d) / (2.0f * A);
-
-    return (t0 >= 0.0f && t0 <= 1.0f) || (t1 >= 0.0f && t1 <= 1.0f);
-}
-
-bool eruptor::physic::Physic_manager::Colision_visitor::OBB_vs_OBB_test(const OBB_hitbox& a, const OBB_hitbox& b) const
-{
-    glm::vec3 axes_to_test[16]{};
-    int id_x{};
-
-    for(auto i{0UZ}; i < 3; i++)
-    {
-        axes_to_test[id_x++] = a.axies[i];
-    }
-
-    for(auto i{0UZ}; i < 3; i++)
-    {
-        axes_to_test[id_x++] = b.axies[i];
-    }
-
-    for(auto i{0UZ}; i < 3; i++)
-    {
-        for(auto j{0UZ}; j < 3; j++)
+        for(auto & hitbox_data : hitboxes_data[0])
         {
-            axes_to_test[id_x++] = glm::cross(a.axies[i], b.axies[j]);
-        }
-    }
-
-    glm::vec3 t = b.center - a.center;
-
-    for(const auto & axis : axes_to_test)
-    {
-        if(glm::dot(axis, axis) < 1e-6f) continue;
-
-        glm::vec3 norm_axis = glm::normalize(axis);
-
-        float proj_a{}, proj_b{};
-        for(auto i{0UZ}; i < 3; i++)
-        {
-            proj_a += a.half_width[i] * std::abs(glm::dot(a.axies[i], norm_axis));
-            proj_b += b.half_width[i] * std::abs(glm::dot(b.axies[i], norm_axis));
-        }
-
-        float distance = std::abs(glm::dot(t, norm_axis));
-
-        if(distance > (proj_a + proj_b + 1e-4f))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-bool eruptor::physic::Physic_manager::Colision_visitor::Sphere_vs_OOB_test(const Sphere_hitbox& sphere, const OBB_hitbox& obb) const
-{
-    glm::vec3 dis = sphere.center - obb.center;
-    glm::vec3 closest_point = obb.center;
-
-    for(auto i{0UZ}; i < 3; i++)
-    {
-        float distance = glm::dot(dis, obb.axies[i]);
-        distance = glm::clamp(distance, -obb.half_width[i], obb.half_width[i]);
-        closest_point += distance * obb.axies[i];
-    }
-
-    glm::vec3 diff = sphere.center - closest_point;
-
-    return glm::dot(diff, diff) <= sphere.radius * sphere.radius;
-}
-
-bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_Sphere_test(const Capsule_hitbox & cap, const Sphere_hitbox & sphere) const
-{
-    glm::vec3 closest = Closest_point_on_segment(cap.start, cap.end, sphere.center);
-    float dist_sq = glm::dot(sphere.center - closest, sphere.center - closest);
-    float radius_sum = cap.radius + sphere.radius;
-
-    return dist_sq <= (radius_sum * radius_sum);
-}
-
-bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_Capsule_test(const Capsule_hitbox & cap_1, const Capsule_hitbox & cap_2) const
-{
-    glm::vec3 d1 = cap_1.end - cap_1.start;
-    glm::vec3 d2 = cap_2.end - cap_2.start;
-    glm::vec3 r = cap_1.start - cap_2.start;
-
-    float a = glm::dot(d1, d1);
-    float e = glm::dot(d2, d2);
-    float f = glm::dot(d2, r);
-
-    float s = 0.0f, t = 0.0f;
-
-    if (a <= 1e-6f && e <= 1e-6f)
-    {
-        return glm::dot(cap_1.start - cap_2.start, cap_1.start - cap_2.start) <= (cap_1.radius + cap_2.radius) * (cap_1.radius + cap_2.radius);
-    }
-
-    if (a <= 1e-6f)
-    {
-        s = 0.0f;
-        t = glm::clamp(f / e, 0.0f, 1.0f);
-    }
-    else
-    {
-        float c = glm::dot(d1, r);
-        if (e <= 1e-6f)
-        {
-            t = 0.0f;
-            s = glm::clamp(-c / a, 0.0f, 1.0f);
-        }
-        else
-        {
-            float b = glm::dot(d1, d2);
-            float denom = a * e - b * b;
-
-            if (denom != 0.0f)
+            if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
             {
-                s = glm::clamp((b * f - c * e) / denom, 0.0f, 1.0f);
-            }
-            else
-            {
-                s = 0.0f;
-            }
-
-            t = (b * s + f) / e;
-            if(t < 0.0f)
-            {
-                t = 0.0f;
-                s = glm::clamp(-c / a, 0.0f, 1.0f);
-            }
-            else if (t > 1.0f)
-            {
-                t = 1.0f;
-                s = glm::clamp((b - c) / a, 0.0f, 1.0f);
+                hitbox_data.Set_model(*this, model_change->model_handle_id);
             }
         }
     }
-
-    glm::vec3 p1 = cap_1.start + d1 * s;
-    glm::vec3 p2 = cap_2.start + d2 * t;
-    float dist_sq = glm::dot(p1 - p2, p1 - p2);
-    float radius_sum = cap_1.radius + cap_2.radius;
-
-    return dist_sq <= (radius_sum * radius_sum);
-}
-
-bool eruptor::physic::Physic_manager::Colision_visitor::Capsule_vs_OBB_test(const Capsule_hitbox & cap, const OBB_hitbox & obb) const
-{
-    auto transform_to_local = [&obb](const glm::vec3& p)
-    {
-        glm::vec3 d = p - obb.center;
-        return glm::vec3{ glm::dot(d, obb.axies[0]), glm::dot(d, obb.axies[1]), glm::dot(d, obb.axies[2]) };
-    };
-
-    glm::vec3 local_a = transform_to_local(cap.start);
-    glm::vec3 local_b = transform_to_local(cap.end);
-
-    glm::vec3 ba = local_b - local_a;
-
-    int steps = 10;
-    float min_dist_sq = std::numeric_limits<float>::max();
-
-    for(int i = 0; i <= steps; ++i)
-    {
-        float t = static_cast<float>(i) / static_cast<float>(steps);
-        glm::vec3 p_local = local_a + ba * t;
-
-        glm::vec3 closest_on_aabb = glm::clamp(p_local, -obb.half_width, obb.half_width);
-
-        float dist_sq = glm::dot(p_local - closest_on_aabb, p_local - closest_on_aabb);
-        if(dist_sq < min_dist_sq)
-        {
-            min_dist_sq = dist_sq;
-        }
-    }
-
-    return min_dist_sq <= (cap.radius * cap.radius);
-}
-
-void eruptor::physic::Physic_manager::On_event([[maybe_unused]] const event::Event & event)
-{
-
 }

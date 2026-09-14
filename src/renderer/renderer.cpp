@@ -143,7 +143,7 @@ void eruptor::renderer::Renderer::Stage_object_render_data(scene::Render_object 
             Render_request<hardware::Push_constant_debug> debug_request{};
             hardware::Push_constant_debug push_constant_debug{};
 
-            auto aabb = object.Get_aabb();
+            auto aabb = eruptor::physic::AABB{{},{}};//object.Get_aabb();
 
             push_constant_debug.color = object.is_selected ?  glm::vec4{1.0f, 0.0f, 0.0f, 1.0f} : glm::vec4{0.0f, 0.0f, 1.0f, 1.0f};
             push_constant_debug.min = aabb.min;

@@ -74,8 +74,19 @@ public:
 
     struct Collision_occurred
     {
-        uint32_t object_a_id;
-        uint32_t object_b_id;
+        uint32_t object_a_id{};
+        uint32_t object_b_id{};
+
+        uint8_t object_a_layer{};
+        uint8_t object_b_layer{};
+
+        using I_am_in = Event;
+    };
+
+    struct Render_object_changed_model
+    {
+        uint32_t render_object_id{};
+        uint32_t model_handle_id{};
 
         using I_am_in = Event;
     };
@@ -95,7 +106,8 @@ private:
                  Key_release,
                  Mouse_moved,
                  Mouse_scroll,
-                 Collision_occurred> data{};
+                 Collision_occurred,
+                 Render_object_changed_model> data{};
 };
 
 template<typename T>

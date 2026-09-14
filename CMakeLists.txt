@@ -14,6 +14,7 @@ add_subdirectory(physic/)
 
 set(RESOURCE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_manager.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_handle.cpp
+                 ${CMAKE_CURRENT_LIST_DIR}/src/resource/scene_parser.cpp
 )
 
 set(RENDERER_SRC ${CMAKE_CURRENT_LIST_DIR}/src/renderer/renderer.cpp
@@ -23,7 +24,6 @@ set(RENDERER_SRC ${CMAKE_CURRENT_LIST_DIR}/src/renderer/renderer.cpp
 set(SCENE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/render_object.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/transformation.cpp
-              ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene_parser.cpp
               ${CMAKE_CURRENT_LIST_DIR}/src/scene/scene_saver.cpp
 )
 

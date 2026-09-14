@@ -1,5 +1,6 @@
 #include <Eruptor/scene/render_object.hpp>
 #include <Eruptor/resource_manager.hpp>
+#include <Eruptor/event/event_manager.hpp>
 #include <numeric>
 
 void eruptor::scene::Render_object::Reset()
@@ -10,108 +11,19 @@ void eruptor::scene::Render_object::Reset()
 }
 
 
-void eruptor::scene::Render_object::Set_model(resource::Resource_manager& resource_manager, resource::Model_handle model_handle)
+void eruptor::scene::Render_object::Set_model(uint32_t object_id, resource::Model_handle model_handle)
 {
     this->model_handle = model_handle;
-    this->model_aabb = resource_manager.Get_model_aabb( model_handle );
 
-    this->hitbox_type = resource_manager.Get_model( model_handle ).hitbox_type;
-    this->model_hitbox = resource_manager.Get_model_hitbox( model_handle );
-    this->transformed_hitbox = this->model_hitbox;
+    event::Event::Render_object_changed_model tmp_event{};
+    tmp_event.render_object_id = object_id;
+    tmp_event.model_handle_id = model_handle.Get_id();
+    event::Event event = tmp_event;
+    event::event_manager.Announce_event( event );
 
+    this->model_changed = true;
     this->aabb_has_changed = true;
     this->hitbox_has_changed = true;
-}
-
-eruptor::physic::AABB eruptor::scene::Render_object::Get_aabb()
-{
-    if(aabb_has_changed)
-    {
-        auto old_aabb = transformed_aabb;
-
-        glm::vec3 corners[8] =
-        {
-            {model_aabb.min.x, model_aabb.min.y, model_aabb.min.z},
-            {model_aabb.max.x, model_aabb.min.y, model_aabb.min.z},
-            {model_aabb.min.x, model_aabb.max.y, model_aabb.min.z},
-            {model_aabb.max.x, model_aabb.max.y, model_aabb.min.z},
-
-            {model_aabb.min.x, model_aabb.min.y, model_aabb.max.z},
-            {model_aabb.max.x, model_aabb.min.y, model_aabb.max.z},
-            {model_aabb.min.x, model_aabb.max.y, model_aabb.max.z},
-            {model_aabb.max.x, model_aabb.max.y, model_aabb.max.z}
-        };
-
-        transformed_aabb = {glm::vec3{std::numeric_limits<float>::max()}, glm::vec3{std::numeric_limits<float>::lowest()}};
-
-        for(auto& corner : corners)
-        {
-            glm::vec3 transformed =
-            glm::vec3(transformation.Get_model_matrix() * glm::vec4(corner, 1.0f));
-
-            transformed_aabb.min = glm::min(transformed_aabb.min, transformed);
-            transformed_aabb.max = glm::max(transformed_aabb.max, transformed);
-        }
-
-        if(reset_last_aabb)
-        {
-            last_aabb = transformed_aabb;
-            reset_last_aabb = false;
-        }
-        else
-        {
-            last_aabb = old_aabb;
-        }
-
-        aabb_has_changed = false;
-    }
-
-    return transformed_aabb;
-}
-
-eruptor::physic::AABB eruptor::scene::Render_object::Get_swept_aabb()
-{
-    physic::AABB current_aabb = Get_aabb();
-    physic::AABB last_aabb = this->last_aabb;
-
-    return {glm::min(last_aabb.min, current_aabb.min), glm::max(last_aabb.max, current_aabb.max)};
-}
-
-eruptor::physic::Hitbox eruptor::scene::Render_object::Get_hitbox()
-{
-    if(hitbox_has_changed)
-    {
-        if(hitbox_type == resource::Hitbox_type::SPHERE)
-        {
-            auto new_sphere = std::get<physic::Sphere_hitbox>(model_hitbox) * Get_model_matrix();
-
-            auto & old_sphere = std::get<physic::Sphere_hitbox>(transformed_hitbox);
-
-            if(reset_last_hitbox)
-            {
-                new_sphere.last_center = new_sphere.center;
-            }
-            else
-            {
-                new_sphere.last_center = old_sphere.center;
-            }
-
-            transformed_hitbox = new_sphere;
-        }
-        else if(hitbox_type == resource::Hitbox_type::OBB)
-        {
-            transformed_hitbox = std::get<physic::OBB_hitbox>(model_hitbox) * Get_model_matrix();
-        }
-        else if(hitbox_type == resource::Hitbox_type::CAPSULE)
-        {
-            transformed_hitbox = std::get<physic::Capsule_hitbox>(model_hitbox) * Get_model_matrix();
-        }
-
-        hitbox_has_changed = false;
-        reset_last_hitbox = false;
-    }
-
-    return transformed_hitbox;
 }
 
 //Transform interface
@@ -127,14 +39,9 @@ void eruptor::scene::Render_object::Set_position(glm::vec3 new_position)
     reset_last_hitbox = true;
 }
 
-void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale, std::optional<float> snap_y)
+void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale)
 {
     transformation.Set_scale( new_scale );
-
-    if(snap_y)
-    {
-        Snap_to_y(*snap_y);
-    }
 
     aabb_has_changed = true;
     hitbox_has_changed = true;
@@ -165,14 +72,9 @@ void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
     hitbox_has_changed = true;
 }
 
-void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset, std::optional<float> snap_y)
+void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset)
 {
     transformation.Set_scale( transformation.Get_scale() + scale_offset );
-
-    if(snap_y)
-    {
-        Snap_to_y(*snap_y);
-    }
 
     aabb_has_changed = true;
     hitbox_has_changed = true;
@@ -186,15 +88,3 @@ void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
     aabb_has_changed = true;
     hitbox_has_changed = true;
 }
-
-void eruptor::scene::Render_object::Snap_to_y(float target_y)
-{
-    physic::AABB aabb = Get_aabb();
-    glm::vec3 pos = transformation.Get_position();
-    pos.y += target_y - aabb.min.y;
-    transformation.Set_position( pos );
-
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
-}
-
