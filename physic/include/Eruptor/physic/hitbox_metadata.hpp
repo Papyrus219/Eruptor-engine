@@ -23,11 +23,13 @@ struct Hitbox_metadata
     void Set_individual_rotation(glm::quat rotation);
     void Set_individual_scale(glm::vec3 scale);
 
+    void Set_is_active(bool is_active) {this->is_active = is_active;}
+
     uint32_t Get_render_object_id() const {return this->render_object_id;}
+    bool Get_is_active() const {return this->is_active;}
 
     const Hitbox & Get_hitbox(scene::Scene & scene);
     Hitbox_type Get_hitbox_type() {return type;}
-
     const AABB & Get_aabb(scene::Scene & scene);
     AABB Get_swept_aabb(scene::Scene & scene);
 
@@ -45,6 +47,8 @@ private:
     Hitbox_type type{};
     Hitbox model_hitbox{};
     Hitbox transformed_hitbox{};
+
+    bool is_active{true};
 };
 
 }

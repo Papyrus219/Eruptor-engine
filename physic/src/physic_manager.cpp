@@ -31,9 +31,15 @@ eruptor::physic::Hitbox_metadata & eruptor::physic::Physic_manager::Get_hitbox_d
 
 void eruptor::physic::Physic_manager::Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene)
 {
-    hitboxes_data[layer].emplace_back();
-    hitboxes_data[layer].back().Set_render_object_id( render_id );
-    hitboxes_data[layer].back().Set_model( *this, scene.render_objects[ render_id ].Get_model_handle().Get_id() );
+    auto result = std::find_if(hitboxes_data[layer].begin(), hitboxes_data[layer].end(), [render_id](auto & hitbox_data)
+    {return hitbox_data.Get_render_object_id() == render_id;}) ;
+
+    if(result == hitboxes_data[layer].end())
+    {
+        hitboxes_data[layer].emplace_back();
+        hitboxes_data[layer].back().Set_render_object_id( render_id );
+        hitboxes_data[layer].back().Set_model( *this, scene.render_objects[ render_id ].Get_model_handle().Get_id() );
+    }
 }
 
 void eruptor::physic::Physic_manager::Add_model_hitbox(uint32_t model_resource_id, physic::Hitbox_type hitbox_type, std::vector<glm::vec3>& all_vertecies)
@@ -115,10 +121,14 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
     {
         for(uint32_t i{1}; i < hitboxes_data[a].size(); i++)
         {
+            if(!scene.render_objects[ hitboxes_data[a][i].Get_render_object_id() ].is_active || !hitboxes_data[a][i].Get_is_active() ) continue;
+
             for(uint8_t b{a}; b < LAYERS_AMOUNT; b++)
             {
                 for(uint32_t j = ((a == b)? i+1 : 0) ; j < hitboxes_data[b].size(); j++)
                 {
+                    if(!scene.render_objects[ hitboxes_data[b][j].Get_render_object_id() ].is_active || !hitboxes_data[b][j].Get_is_active() ) continue;
+
                     auto aabb_a = sweep_aabbs[a][i];
                     auto aabb_b = sweep_aabbs[b][j];
 
