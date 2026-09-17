@@ -22,7 +22,6 @@ void eruptor::resource::Scene_parser::Assign_resource_manager(Resource_manager& 
     this->physic_manager = &resource_manager.Get_assigned_physic_manager();
 }
 
-
 std::expected<eruptor::scene::Scene, std::string_view> eruptor::resource::Scene_parser::Load_scene(const std::filesystem::path & scene_path)
 {
     Load_file_to_buffor(scene_path);
@@ -342,8 +341,8 @@ void eruptor::resource::Scene_parser::Parse_line(std::string_view line, scene::S
                 return;
             }
 
-            physic_manager->Add_hitbox(0, scene.render_objects.size() - 1, scene);
             ///@todo When you return please add hitbox creation here. Thank you in advance.
+            physic_manager->Add_hitbox(0, scene.render_objects.size() - 1, scene);
             scene.render_objects.back().Set_model(scene.render_objects.size() - 1, model_variables[model_variable_name].second);
 
             line_mode = Line_mode::OBJECT_POSITION;

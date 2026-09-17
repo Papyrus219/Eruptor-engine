@@ -101,6 +101,8 @@ void eruptor::physic::Physic_manager::Snap_y(scene::Scene & scene)
     }
 }
 
+#include <iostream>
+
 void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, float delta_time)
 {
     can_coliding.clear();
@@ -127,6 +129,8 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
             {
                 for(uint32_t j = ((a == b)? i+1 : 0) ; j < hitboxes_data[b].size(); j++)
                 {
+                    //std::clog << "UGANDA!\n";
+
                     if(!scene.render_objects[ hitboxes_data[b][j].Get_render_object_id() ].is_active || !hitboxes_data[b][j].Get_is_active() ) continue;
 
                     auto aabb_a = sweep_aabbs[a][i];
