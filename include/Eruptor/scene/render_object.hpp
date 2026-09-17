@@ -51,10 +51,8 @@ struct Render_object
     bool is_selected{};
     bool is_active{true};
 
-    bool aabb_has_changed{};
-    bool reset_last_aabb{};
-    bool hitbox_has_changed{};
-    bool reset_last_hitbox{};
+    uint64_t transformation_version{};
+    uint64_t reset_version{};
 
     bool model_changed{};
 

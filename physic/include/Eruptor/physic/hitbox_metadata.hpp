@@ -48,6 +48,11 @@ private:
     Hitbox model_hitbox{};
     Hitbox transformed_hitbox{};
 
+    uint64_t aabb_transformation_version{};
+    uint64_t aabb_reset_version{};
+    uint64_t hitbox_transformation_version{};
+    uint64_t hitbox_reset_version{};
+
     bool is_active{true};
 };
 

@@ -22,8 +22,7 @@ void eruptor::scene::Render_object::Set_model(uint32_t object_id, resource::Mode
     event::event_manager.Announce_event( event );
 
     this->model_changed = true;
-    this->aabb_has_changed = true;
-    this->hitbox_has_changed = true;
+    reset_version++;
 }
 
 //Transform interface
@@ -32,52 +31,43 @@ void eruptor::scene::Render_object::Set_position(glm::vec3 new_position)
 {
     transformation.Set_position( new_position );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
-
-    reset_last_aabb = true;
-    reset_last_hitbox = true;
+    transformation_version++;
+    reset_version++;
 }
 
 void eruptor::scene::Render_object::Set_scale(glm::vec3 new_scale)
 {
     transformation.Set_scale( new_scale );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }
 
 void eruptor::scene::Render_object::Set_rotation_euler(glm::vec3 new_rotation)
 {
     transformation.Set_rotation_euler( new_rotation );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }
 
 void eruptor::scene::Render_object::Set_rotation_quad(glm::quat new_rotation)
 {
     transformation.Set_rotation_quad( new_rotation );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }
-
 
 void eruptor::scene::Render_object::Move(glm::vec3 move_offset)
 {
     transformation.Set_position( transformation.Get_position() + move_offset );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }
 
 void eruptor::scene::Render_object::Change_scale(glm::vec3 scale_offset)
 {
     transformation.Set_scale( transformation.Get_scale() + scale_offset );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }
 
 void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
@@ -85,6 +75,5 @@ void eruptor::scene::Render_object::Rotate(glm::vec3 rotation_offset)
     glm::quat quat_offset = glm::quat(rotation_offset);
     transformation.Set_rotation_quad( transformation.Get_rotation() * quat_offset );
 
-    aabb_has_changed = true;
-    hitbox_has_changed = true;
+    transformation_version++;
 }

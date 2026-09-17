@@ -16,14 +16,14 @@ void eruptor::physic::Physic_manager::Update_scene(scene::Scene & scene, float d
     Chceck_colisions(scene, delta_time);
 }
 
-eruptor::physic::Hitbox_metadata & eruptor::physic::Physic_manager::Get_hitbox_data(uint8_t layer, uint32_t render_id)
+std::optional<std::reference_wrapper<eruptor::physic::Hitbox_metadata>> eruptor::physic::Physic_manager::Get_hitbox_data(uint8_t layer, uint32_t render_id)
 {
     auto result = std::find_if(hitboxes_data[layer].begin(), hitboxes_data[layer].end(), [render_id](auto & hitbox_data)
                                                                             {return hitbox_data.Get_render_object_id() == render_id;}) ;
 
     if(result == hitboxes_data[layer].end())
     {
-        throw std::runtime_error{"ERUPTOR::PHYSIC::No  hitbox with this id registered!"};
+        return {};
     }
 
     return *result;
@@ -95,8 +95,7 @@ void eruptor::physic::Physic_manager::Snap_y(scene::Scene & scene)
             pos.y += render_object.snap_y.value() - aabb.min.y;
             render_object.Set_position( pos );
 
-            render_object.aabb_has_changed = true;
-            render_object.hitbox_has_changed = true;
+            render_object.transformation_version++;
         }
     }
 }

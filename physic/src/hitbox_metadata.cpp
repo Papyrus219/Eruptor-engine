@@ -33,7 +33,7 @@ const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::
 {
     auto & render_object = scene.render_objects[ this->render_object_id ];
 
-    if(render_object.aabb_has_changed)
+    if(aabb_transformation_version != render_object.transformation_version)
     {
         auto position = (this->position.has_value())? this->position.value() : render_object.Get_position();
         auto rotation = (this->rotation.has_value())? this->rotation.value() : render_object.Get_rotation();
@@ -69,17 +69,18 @@ const eruptor::physic::AABB & eruptor::physic::Hitbox_metadata::Get_aabb(scene::
             transformed_aabb.max = glm::max(transformed_aabb.max, transformed);
         }
 
-        if(render_object.reset_last_aabb)
+        if(aabb_reset_version != render_object.reset_version)
         {
             last_aabb = transformed_aabb;
-            render_object.reset_last_aabb = false;
+            aabb_reset_version = render_object.reset_version;
         }
         else
         {
             last_aabb = old_aabb;
         }
 
-        render_object.aabb_has_changed = false;
+
+        aabb_transformation_version = render_object.transformation_version;
     }
 
     return transformed_aabb;
@@ -89,7 +90,7 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
 {
     auto & render_object = scene.render_objects[ this->render_object_id ];
 
-    if(render_object.hitbox_has_changed)
+    if(hitbox_transformation_version != render_object.transformation_version)
     {
         auto position = (this->position.has_value())? this->position.value() : render_object.Get_position();
         auto rotation = (this->rotation.has_value())? this->rotation.value() : render_object.Get_rotation();
@@ -105,9 +106,11 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
             auto new_sphere = std::get<physic::Sphere_hitbox>(model_hitbox) * model;
             auto & old_sphere = std::get<physic::Sphere_hitbox>(transformed_hitbox);
 
-            if(render_object.reset_last_hitbox)
+            if(hitbox_reset_version != render_object.reset_version)
             {
                 new_sphere.last_center = new_sphere.center;
+
+                hitbox_reset_version = render_object.reset_version;
             }
             else
             {
@@ -125,8 +128,7 @@ const eruptor::physic::Hitbox & eruptor::physic::Hitbox_metadata::Get_hitbox(sce
             transformed_hitbox = std::get<Sphere_hitbox>(model_hitbox) * model;
         }
 
-        render_object.hitbox_has_changed = false;
-        render_object.reset_last_hitbox = false;
+        hitbox_transformation_version = render_object.transformation_version;
     }
 
     return transformed_hitbox;

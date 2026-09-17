@@ -8,6 +8,7 @@
 #include <Eruptor/physic/can_colide_info.hpp>
 #include <vector>
 #include <unordered_map>
+#include <functional>
 
 namespace eruptor::scene
 {
@@ -35,7 +36,7 @@ public:
     void Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene);
     void Add_model_hitbox(uint32_t model_resource_id, physic::Hitbox_type hitbox_type, std::vector<glm::vec3> & all_vertecies);
 
-    Hitbox_metadata & Get_hitbox_data(uint8_t layer, uint32_t render_id);
+    std::optional<std::reference_wrapper<Hitbox_metadata>> Get_hitbox_data(uint8_t layer, uint32_t render_id);
 
     AABB Get_model_aabb(uint32_t model_resource_id) {return model_aabbs.at(model_resource_id);}
     Hitbox Get_model_hitbox(uint32_t model_resource_id) {return model_hitboxes.at(model_resource_id);}
