@@ -114,26 +114,21 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
 
         for(auto j{0UZ}; j < hitboxes_data[i].size(); j++)
         {
-            sweep_aabbs[i].push_back( hitboxes_data[i][j].Get_swept_aabb(scene) );
+            if(!scene.render_objects[ hitboxes_data[i][j].Get_render_object_id() ].is_active || !hitboxes_data[i][j].Get_is_active()) continue;
+            sweep_aabbs[i].push_back( {j, hitboxes_data[i][j].Get_swept_aabb(scene)} );
         }
     }
 
     for(uint8_t a{}; a < LAYERS_AMOUNT; a++)
     {
-        for(uint32_t i{1}; i < hitboxes_data[a].size(); i++)
+        for(uint32_t i{1}; i < sweep_aabbs[a].size(); i++)
         {
-            if(!scene.render_objects[ hitboxes_data[a][i].Get_render_object_id() ].is_active || !hitboxes_data[a][i].Get_is_active() ) continue;
-
             for(uint8_t b{a}; b < LAYERS_AMOUNT; b++)
             {
-                for(uint32_t j = ((a == b)? i+1 : 0) ; j < hitboxes_data[b].size(); j++)
+                for(uint32_t j = ((a == b)? i+1 : 0) ; j < sweep_aabbs[b].size(); j++)
                 {
-                    //std::clog << "UGANDA!\n";
-
-                    if(!scene.render_objects[ hitboxes_data[b][j].Get_render_object_id() ].is_active || !hitboxes_data[b][j].Get_is_active() ) continue;
-
-                    auto aabb_a = sweep_aabbs[a][i];
-                    auto aabb_b = sweep_aabbs[b][j];
+                    auto aabb_a = sweep_aabbs[a][i].second;
+                    auto aabb_b = sweep_aabbs[b][j].second;
 
                     bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
                     bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
@@ -141,7 +136,7 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
 
                     if(x_colision && y_colision && z_colision)
                     {
-                        can_coliding.push_back( {.hitbox_a_id = i, .hitbox_b_id = j, .hitbox_a_layer = a, .hitbox_b_layer = b} );
+                        can_coliding.push_back( {.hitbox_a_id = sweep_aabbs[a][i].first, .hitbox_b_id = sweep_aabbs[b][j].first, .hitbox_a_layer = a, .hitbox_b_layer = b} );
                     }
                 }
             }

@@ -49,7 +49,7 @@ private:
     static constexpr uint8_t LAYERS_AMOUNT{8};
 
     std::array<std::vector<Hitbox_metadata>, LAYERS_AMOUNT>  hitboxes_data{};
-    std::array<std::vector<AABB>, LAYERS_AMOUNT> sweep_aabbs{};
+    std::array<std::vector< std::pair<uint32_t, AABB> >, LAYERS_AMOUNT> sweep_aabbs{};
 
     std::unordered_map<uint32_t, AABB> model_aabbs{};
     std::unordered_map<uint32_t, Hitbox> model_hitboxes{};
