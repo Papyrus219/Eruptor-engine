@@ -3,6 +3,8 @@ project(eruptor)
 
 include(${CMAKE_SOURCE_DIR}/cmake/modules/libs_maker.cmake)
 
+option(ERUPTOR_BUILD_TESTS "Build eruptor unit tests" OFF)
+
 find_package(Vulkan REQUIRED)
 find_package(assimp REQUIRED)
 find_package(glfw3 REQUIRED)
@@ -15,6 +17,7 @@ add_subdirectory(physic/)
 set(RESOURCE_SRC ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_manager.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/resource/resource_handle.cpp
                  ${CMAKE_CURRENT_LIST_DIR}/src/resource/scene_parser.cpp
+                 ${CMAKE_CURRENT_LIST_DIR}/src/resource/config_parser.cpp
 )
 
 set(RENDERER_SRC ${CMAKE_CURRENT_LIST_DIR}/src/renderer/renderer.cpp
@@ -51,3 +54,11 @@ SOURCES ENGINE_SRC
 LIBRARIES_TO_LINK_PRIV eruptor_hardware eruptor_event project_compiler_warmings
 LIBRARIES_TO_LINK_PUB eruptor_resource eruptor_renderer eruptor_physic
 COMPILATION_FEATURES cxx_std_23)
+
+if(ERUPTOR_BUILD_TESTS)
+    add_executable(config_parser_test
+        tests/config_parser_test.cpp
+        src/resource/config_parser.cpp)
+    target_include_directories(config_parser_test PRIVATE include/)
+    target_compile_features(config_parser_test PRIVATE cxx_std_23)
+endif()
