@@ -2,6 +2,7 @@
 #define ERUPTOR_RESOURCE_RESOURCE_MANAGER_HPP
 
 #include <Eruptor/resource/scene_parser.hpp>
+#include <Eruptor/resource/config_parser.hpp>
 #include <Eruptor/resource/resource.hpp>
 #include <Eruptor/resource/model.hpp>
 #include <Eruptor/resource/material.hpp>
@@ -96,6 +97,7 @@ public:
     std::filesystem::path texture_dirr_path{};
 
     Scene_parser scene_parser{};
+    Config_parser config_parser{};
 
     virtual ~Resource_manager() override;
 

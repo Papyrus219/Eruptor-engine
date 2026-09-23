@@ -1,4 +1,5 @@
 #include <Eruptor/resource/config_parser.hpp>
+#include <iostream>
 #include <fstream>
 #include <format>
 
@@ -6,6 +7,7 @@ using namespace eruptor::resource;
 
 std::expected<std::unordered_map<std::string, std::string>, std::string_view> eruptor::resource::Config_parser::Parse_config_file(const std::filesystem::path & path)
 {
+    error_message = "";
     std::unordered_map<std::string, std::string> parsed_config{};
     std::ifstream file{path};
     if(!file)
