@@ -56,9 +56,6 @@ LIBRARIES_TO_LINK_PUB eruptor_resource eruptor_renderer eruptor_physic
 COMPILATION_FEATURES cxx_std_23)
 
 if(ERUPTOR_BUILD_TESTS)
-    add_executable(config_parser_test
-        tests/config_parser_test.cpp
-        src/resource/config_parser.cpp)
-    target_include_directories(config_parser_test PRIVATE include/)
-    target_compile_features(config_parser_test PRIVATE cxx_std_23)
+    include(CTest)
+    add_subdirectory(tests/)
 endif()

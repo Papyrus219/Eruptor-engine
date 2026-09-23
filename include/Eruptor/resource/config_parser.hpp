@@ -7,6 +7,7 @@
 #include <string>
 #include <cstdint>
 #include <iostream>
+#include <charconv>
 
 namespace eruptor::resource
 {
