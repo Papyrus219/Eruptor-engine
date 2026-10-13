@@ -27,8 +27,6 @@ class Physic_manager: public event::Event_listener
 public:
     Physic_manager();
 
-    ///@todo ADD HITBOX_TYPE IN SET HITBOX IN HITBOX METADATA
-
     void Update_scene(scene::Scene & scene, float delta_time);
 
     void On_event(const event::Event & event) override;
