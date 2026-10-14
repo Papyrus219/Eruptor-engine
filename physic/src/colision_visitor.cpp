@@ -1,5 +1,14 @@
 #include <Eruptor/physic/colision_visitor.hpp>
 
+bool eruptor::physic::Colision_visitor::AABB_vs_AABB_test(const AABB & a, const AABB & b) const
+{
+    bool x_colision = a.max.x > b.min.x && a.min.x < b.max.x;
+    bool y_colision = a.max.y > b.min.y && a.min.y < b.max.y;
+    bool z_colision = a.max.z > b.min.z && a.min.z < b.max.z;
+
+    return x_colision && y_colision && z_colision;
+}
+
 bool eruptor::physic::Colision_visitor::Sphere_vs_sphere_test(const Sphere_hitbox& a, const Sphere_hitbox& b) const
 {
     glm::vec3 pos = a.last_center - b.last_center;

@@ -3,17 +3,30 @@
 #include <Eruptor/event/event_manager.hpp>
 #include <Eruptor/resource_manager.hpp>
 #include <ranges>
+#include <algorithm>
+#include <limits>
+#include <bit>
+#include <cassert>
+#include <cmath>
+#include <algorithm>
 
 eruptor::physic::Physic_manager::Physic_manager(): event_manager{ event::event_manager }
 {
     event_manager.Add_listener( *this );
+    layer_colision_masks.resize( LAYERS_AMOUNT );
 }
 
 void eruptor::physic::Physic_manager::Update_scene(scene::Scene & scene, float delta_time)
 {
     Snap_y(scene);
 
+    Fill_grid(scene);
     Chceck_colisions(scene, delta_time);
+}
+
+void eruptor::physic::Physic_manager::Setup_grid(uint32_t rows_amount, uint32_t columns_amount, AABB scene_aabb, uint32_t average_amount_for_field)
+{
+    grid.Init(rows_amount, columns_amount, scene_aabb.min, scene_aabb.max, average_amount_for_field);
 }
 
 std::optional<std::reference_wrapper<eruptor::physic::Hitbox_metadata>> eruptor::physic::Physic_manager::Get_hitbox_data(uint8_t layer, uint32_t render_id)
@@ -83,6 +96,34 @@ void eruptor::physic::Physic_manager::Add_model_hitbox(uint32_t model_resource_i
     model_hitboxes_types[model_resource_id] = hitbox_type;
 }
 
+void eruptor::physic::Physic_manager::Request_layers_colision_test(uint8_t requesting_layer, uint8_t requested_layer)
+{
+    assert(requesting_layer < LAYERS_AMOUNT && requested_layer < LAYERS_AMOUNT);
+
+    auto mask = 1u << requested_layer;
+
+    layer_colision_masks[requesting_layer] |= mask;
+    requested_layers |= mask;
+}
+
+void eruptor::physic::Physic_manager::Fill_grid(scene::Scene & scene)
+{
+    grid.Clear();
+
+    for(uint32_t m = requested_layers; m != 0; m &= m-1)
+    {
+        auto layer_id = std::countr_zero( m );
+        auto & layer = hitboxes_data[ layer_id ];
+
+        for(auto i{0UZ}; i < layer.size(); i++)
+        {
+            if(!layer[i].Get_is_active()) continue;
+
+            grid.Add_object_to_grid( layer[i].Get_swept_aabb(scene), i, layer_id);
+        }
+    }
+}
+
 void eruptor::physic::Physic_manager::Snap_y(scene::Scene & scene)
 {
     for(auto & hitbox_data : hitboxes_data[0])
@@ -107,41 +148,58 @@ void eruptor::physic::Physic_manager::Chceck_colisions(scene::Scene & scene, flo
     can_coliding.clear();
     can_coliding.reserve( last_can_coliding_size );
 
-    for(auto i{0UZ}; i < hitboxes_data.size(); i++)
+    for(uint8_t i{0}; i < layer_colision_masks.size(); i++)
     {
-        sweep_aabbs[i].clear();
-        sweep_aabbs[i].reserve(hitboxes_data[i].size());
+        auto mask = layer_colision_masks[i];
+        if(mask == 0) continue;
 
-        for(auto j{0UZ}; j < hitboxes_data[i].size(); j++)
+        for(uint32_t j{0}; j < hitboxes_data[i].size(); j++)
         {
-            if(!scene.render_objects[ hitboxes_data[i][j].Get_render_object_id() ].is_active || !hitboxes_data[i][j].Get_is_active()) continue;
-            sweep_aabbs[i].push_back( {j, hitboxes_data[i][j].Get_swept_aabb(scene)} );
-        }
-    }
-
-    for(uint8_t a{}; a < LAYERS_AMOUNT; a++)
-    {
-        for(uint32_t i{1}; i < sweep_aabbs[a].size(); i++)
-        {
-            for(uint8_t b{a}; b < LAYERS_AMOUNT; b++)
+            if(!hitboxes_data[i][j].Get_is_active())
             {
-                for(uint32_t j = ((a == b)? i+1 : 0) ; j < sweep_aabbs[b].size(); j++)
+                continue;
+            }
+
+            auto aabb_a = hitboxes_data[i][j].Get_swept_aabb(scene);
+            auto possible_colisions = grid.Get_entries_for_object( aabb_a );
+
+            for(uint32_t k{0}; k < possible_colisions.size(); k++)
+            {
+                auto entries = possible_colisions[k];
+                for(uint32_t l{0}; l < entries.size(); l++)
                 {
-                    auto aabb_a = sweep_aabbs[a][i].second;
-                    auto aabb_b = sweep_aabbs[b][j].second;
-
-                    bool x_colision = aabb_a.max.x > aabb_b.min.x && aabb_a.min.x < aabb_b.max.x;
-                    bool y_colision = aabb_a.max.y > aabb_b.min.y && aabb_a.min.y < aabb_b.max.y;
-                    bool z_colision = aabb_a.max.z > aabb_b.min.z && aabb_a.min.z < aabb_b.max.z;
-
-                    if(x_colision && y_colision && z_colision)
+                    if( !( (1u << entries[l].layer) & mask ) )
                     {
-                        can_coliding.push_back( {.hitbox_a_id = sweep_aabbs[a][i].first, .hitbox_b_id = sweep_aabbs[b][j].first, .hitbox_a_layer = a, .hitbox_b_layer = b} );
+                        continue;
+                    }
+                    if(!hitboxes_data[ entries[l].layer ][ entries[l].id ].Get_is_active())
+                    {
+                        continue;
+                    }
+                    if(entries[l].layer == i)
+                    {
+                        if(entries[l].id == j) continue;
+                        if(entries[l].id < j) continue;
+                    }
+
+                    auto aabb_b = hitboxes_data[ entries[l].layer ][ entries[l].id ].Get_swept_aabb(scene);
+
+                    if(colision_visitor(aabb_a, aabb_b))
+                    {
+                         can_coliding.push_back( {.hitbox_a_id = j, .hitbox_b_id = entries[l].id, .hitbox_a_layer = i, .hitbox_b_layer = entries[l].layer} );
                     }
                 }
             }
         }
     }
+
+    auto key = [](const auto & p)
+    {
+        return std::tie(p.hitbox_a_layer, p.hitbox_a_id, p.hitbox_b_layer, p.hitbox_b_id);
+    };
+
+    std::sort(can_coliding.begin(), can_coliding.end(), [&](const auto & a, const auto & b) { return key(a) < key(b); });
+    can_coliding.erase(std::unique(can_coliding.begin(), can_coliding.end(), [&](const auto & a, const auto & b) { return key(a) == key(b); }), can_coliding.end());
 
     last_can_coliding_size = can_coliding.size();
 
@@ -166,11 +224,14 @@ void eruptor::physic::Physic_manager::On_event(const event::Event & event)
 {
     if(auto model_change = event.Get_if<event::Event::Render_object_changed_model>())
     {
-        for(auto & hitbox_data : hitboxes_data[0])
+        for(auto & layer : hitboxes_data)
         {
-            if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
+            for(auto & hitbox_data : layer)
             {
-                hitbox_data.Set_model(*this, model_change->model_handle_id);
+                if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
+                {
+                    hitbox_data.Set_model(*this, model_change->model_handle_id);
+                }
             }
         }
     }
