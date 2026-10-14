@@ -117,6 +117,8 @@ void eruptor::physic::Physic_manager::Fill_grid(scene::Scene & scene)
 
         for(auto i{0UZ}; i < layer.size(); i++)
         {
+            if(!layer[i].Get_is_active()) continue;
+
             grid.Add_object_to_grid( layer[i].Get_swept_aabb(scene), i, layer_id);
         }
     }
