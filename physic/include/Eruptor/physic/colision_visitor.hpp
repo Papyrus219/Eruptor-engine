@@ -10,6 +10,11 @@ namespace eruptor::physic
 class Colision_visitor
 {
 public:
+    bool operator()(const AABB & a, const AABB & b) const
+    {
+        return AABB_vs_AABB_test(a, b);
+    }
+
     bool operator()(const Sphere_hitbox & a, const Sphere_hitbox & b) const
     {
         return Sphere_vs_sphere_test(a, b);
@@ -58,6 +63,7 @@ public:
     float delta_time{};
 
 private:
+    bool AABB_vs_AABB_test(const AABB & a, const AABB & b) const;
     bool Sphere_vs_sphere_test(const Sphere_hitbox & a, const Sphere_hitbox & b) const;
     bool OBB_vs_OBB_test(const OBB_hitbox & a, const OBB_hitbox & b) const;
     bool Sphere_vs_OOB_test(const Sphere_hitbox & sphere, const OBB_hitbox & obb) const;

@@ -6,6 +6,7 @@
 #include <Eruptor/physic/hitbox_calculator.hpp>
 #include <Eruptor/physic/hitbox_metadata.hpp>
 #include <Eruptor/physic/can_colide_info.hpp>
+#include <Eruptor/physic/grid.hpp>
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -29,6 +30,8 @@ public:
 
     void Update_scene(scene::Scene & scene, float delta_time);
 
+    void Setup_grid(uint32_t rows_amount, uint32_t columns_amount, AABB scene_aabb, uint32_t average_amount_for_field = 2);
+
     void On_event(const event::Event & event) override;
 
     void Add_hitbox(uint8_t layer, uint32_t render_id, scene::Scene & scene);
@@ -40,14 +43,17 @@ public:
     Hitbox Get_model_hitbox(uint32_t model_resource_id) {return model_hitboxes.at(model_resource_id);}
     Hitbox_type Get_model_hitbox_type(uint32_t model_resource_id) {return model_hitboxes_types.at(model_resource_id);}
 
+    void Request_layers_colision_test(uint8_t requesting_layer, uint8_t requested_layer);
+
 private:
+    void Fill_grid(scene::Scene & scene);
+
     void Snap_y(scene::Scene & scene);
     void Chceck_colisions(scene::Scene & scene, float delta_time);
 
     static constexpr uint8_t LAYERS_AMOUNT{8};
 
     std::array<std::vector<Hitbox_metadata>, LAYERS_AMOUNT>  hitboxes_data{};
-    std::array<std::vector< std::pair<uint32_t, AABB> >, LAYERS_AMOUNT> sweep_aabbs{};
 
     std::unordered_map<uint32_t, AABB> model_aabbs{};
     std::unordered_map<uint32_t, Hitbox> model_hitboxes{};
@@ -56,8 +62,13 @@ private:
     Colision_visitor colision_visitor{};
     Hitbox_calculator hitbox_calculator{};
 
+    std::vector< uint32_t > layer_colision_masks{};
+    uint32_t requested_layers{};
+
     std::vector< Can_colide_info > can_coliding{};
     size_t last_can_coliding_size{};
+
+    Grid grid{};
 
     event::Event_manager & event_manager;
 };
