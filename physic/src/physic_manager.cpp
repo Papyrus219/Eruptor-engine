@@ -222,11 +222,14 @@ void eruptor::physic::Physic_manager::On_event(const event::Event & event)
 {
     if(auto model_change = event.Get_if<event::Event::Render_object_changed_model>())
     {
-        for(auto & hitbox_data : hitboxes_data[0])
+        for(auto & layer : hitboxes_data)
         {
-            if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
+            for(auto & hitbox_data : layer)
             {
-                hitbox_data.Set_model(*this, model_change->model_handle_id);
+                if(hitbox_data.Get_render_object_id() == model_change->render_object_id)
+                {
+                    hitbox_data.Set_model(*this, model_change->model_handle_id);
+                }
             }
         }
     }
